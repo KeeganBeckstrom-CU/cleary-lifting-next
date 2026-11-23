@@ -16,13 +16,16 @@ const curT = () => SEL || findToday();
 
 /* ===================== shell ===================== */
 function render() { MEMO = {}; const m = $("#main"); if (!CFG.me && !isCoach()) { m.innerHTML = welcomeHTML(); $("#nav").hidden = true; return }
+  const pv = isCoach() && CFG.pview; document.body.classList.toggle("pview", !!pv);
   if (!CFG.me && ["today", "trophies"].includes(view)) view = "coach";
-  const tabs = isCoach() ? [["coach", "Coach", I.clip]].concat(CFG.me ? [["today", "Today", I.bolt]] : [], [["season", "Season", I.map], ["team", "Team", I.team], ["me", "Me", I.me]])
+  if (pv && view === "coach") view = "today";
+  const tabs = isCoach() && !pv ? [["coach", "Coach", I.clip]].concat(CFG.me ? [["today", "Today", I.bolt]] : [], [["season", "Season", I.map], ["team", "Team", I.team], ["me", "Me", I.me]])
     : [["today", "Today", I.bolt], ["season", "Season", I.map], ["team", "Team", I.team], ["trophies", "Trophies", I.cup], ["me", "Me", I.me]];
   $("#nav").hidden = false; $("#nav").innerHTML = tabs.map(([k, l, ic]) =>
     `<button class="${view === k ? "on" : ""}" data-nav="${k}">${ic}<span>${l}</span>${k === "trophies" && unopened().length ? `<i class="dot">${unopened().length}</i>` : ""}</button>`).join("");
   $("#nav").style.gridTemplateColumns = `repeat(${tabs.length},1fr)`;
   m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML }[view] || todayHTML)();
+  if (pv) m.innerHTML = `<div class="pvbar"><span>${I.me} Player view</span><button data-pvoff>Back to coach</button></div>` + m.innerHTML;
   m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); if (view === "coach") coachLoad(); bindCards() }
 function go(v) { view = v; render(); scrollTo(0, 0) }
 
@@ -287,7 +290,7 @@ function meHTML() { if (!CFG.me) return topbar("Me", "Coach account") + `<div cl
    <div class="sec-h"><h2>Coach</h2></div>${coachMeCard()}
    <button class="linkb sm danger" data-reset>Reset my test data on this phone</button><p class="fine">Test build · saves on this phone only until accounts are connected.</p></div>`;
   return h }
-function coachMeCard() { return isCoach() ? `<div class="card cme"><div><b>Signed in as coach</b><small>${esc(COACH.user.email || "")}</small></div><button class="pill gold sm" data-nav="coach">Coach view</button><button class="pill ghost sm" data-cout>Sign out</button></div>` : coachGate() }
+function coachMeCard() { return isCoach() ? `<div class="card cme"><div><b>Signed in as coach</b><small>${esc(COACH.user.email || "")}</small></div><button class="pill gold sm" data-nav="coach">Coach view</button><button class="pill sm" data-pvon>Player view</button><button class="pill ghost sm" data-cout>Sign out</button></div>` : coachGate() }
 function coachSummary() { const T = findToday(), need = PH[T.p].days.filter(D => !skipMsg(T.p, T.w, D.k)).length, rows = teamRows();
   const behind = rows.filter(r => r.wkDone < need).sort((a, b) => a.wkDone - b.wkDone), rel = rows.filter(r => r.bw && r.top).map(r => Object.assign({ rel: r.top / r.bw }, r)).sort((a, b) => b.rel - a.rel);
   const exc = Object.entries(CFG.exc), pend = prEvents().filter(e => e.check);
@@ -344,6 +347,8 @@ function bindCards() { $$("[data-tilt]").forEach(c => { if (c._t) return; c._t =
 document.addEventListener("submit", e => { if (e.target.matches("[data-profile]")) { e.preventDefault(); saveProfile(e.target) } });
 document.addEventListener("click", e => { const t = e.target.closest("button,[data-nav],[data-wk],[data-mph],[data-cap],[data-opencap],a,label,u"); if (!t) return; const D = t.dataset;
   if (D.nav) { if (D.nav !== view || !t.closest("#nav")) go(D.nav); return }
+  if ("pvon" in D) { CFG.pview = true; if (!CFG.me) CFG.me = { fn: "Player", ln: "Preview", num: "00", cls: "Fr", pos: "Position", u: "preview", preview: 1 }; saveNow(); $$(".ov").forEach(o => closeOv(o)); view = "today"; render(); scrollTo(0, 0); return }
+  if ("pvoff" in D) { CFG.pview = false; if (CFG.me && CFG.me.preview) CFG.me = null; saveNow(); view = "coach"; render(); scrollTo(0, 0); return }
   if ("clogin" in D) { coachLoginSheet(); return } if ("cout" in D) { coachOut(); return } if ("creload" in D) { coachLoad(true); return }
   if (D.csort) { CSORT = D.csort; render(); return } if (D.cpos) { CPOS = D.cpos; render(); return } if (D.cp) { cPlayerSheet(D.cp); return }
   if ("mkplayer" in D) { const o = $("#main"); o.innerHTML = welcomeHTML(); $("#nav").hidden = true; return }
