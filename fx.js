@@ -84,24 +84,46 @@ function fadeOut(a) { let v = a.volume; const t = setInterval(() => { v = Math.m
 function rr(x, ctx, X, Y, W, H, R) { ctx.beginPath(); ctx.moveTo(X + R, Y); ctx.arcTo(X + W, Y, X + W, Y + H, R); ctx.arcTo(X + W, Y + H, X, Y + H, R); ctx.arcTo(X, Y + H, X, Y, R); ctx.arcTo(X, Y, X + W, Y, R); ctx.closePath() }
 function loadImg(src) { return new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src }) }
 async function shareImage(kind, d) {
-  const c = document.createElement("canvas"); c.width = 1080; c.height = 1920; const x = c.getContext("2d");
-  const g = x.createLinearGradient(0, 0, 0, 1920); g.addColorStop(0, "#0A1A3D"); g.addColorStop(.55, "#07122A"); g.addColorStop(1, "#2A0716"); x.fillStyle = g; x.fillRect(0, 0, 1080, 1920);
-  x.save(); x.globalAlpha = .07; x.fillStyle = "#fff"; for (let i = 0; i < 3; i++) { x.save(); x.translate(820 + i * 90, 300); x.transform(1, 0, -.32, 1, 0, 0); rr(0, x, 0, 0, 56, 900 - i * 120, 28); x.fill(); x.restore() } x.restore();
-  const logo = await loadImg("img/cu.png"); if (logo) x.drawImage(logo, 90, 110, 208, 130);
-  x.fillStyle = "#C9D6EA"; x.font = "700 40px 'Barlow Condensed', sans-serif"; x.fillText("CLEARY BASEBALL · LIFTING", 90, 320);
-  x.fillStyle = "#fff"; const big = (t, y, s) => { x.font = `italic 800 ${s}px 'Barlow Condensed', sans-serif`; x.fillText(t, 90, y) };
-  if (kind === "pr") { big("NEW PR", 560, 200); x.fillStyle = "#F3C34A"; big(d.w + " LB", 800, 230); x.fillStyle = "#fff"; x.font = "700 64px 'Barlow Condensed', sans-serif"; wrap(x, d.name.toUpperCase(), 90, 920, 900, 70);
-    x.fillStyle = "#9DB0CC"; x.font = "600 46px Barlow, sans-serif"; x.fillText("+" + (d.w - d.prev) + " lb over my best", 90, 1110) }
-  else if (kind === "day") { big("WORKOUT", 520, 170); big("DONE.", 690, 170); const st = [["SETS", d.sets], ["LB MOVED", fmt(d.lb)], ["XP", d.xp], ["STREAK", "🔥" + d.streak]];
-    st.forEach(([l, v], i) => { const X = 90 + (i % 2) * 460, Y = 820 + Math.floor(i / 2) * 300; x.fillStyle = "rgba(255,255,255,.07)"; rr(0, x, X, Y, 420, 250, 30); x.fill(); x.fillStyle = "#F3C34A"; x.font = "italic 800 110px 'Barlow Condensed'"; x.fillText(String(v), X + 36, Y + 140); x.fillStyle = "#9DB0CC"; x.font = "700 38px Barlow"; x.fillText(l, X + 40, Y + 205) });
-    x.fillStyle = "#fff"; x.font = "700 52px 'Barlow Condensed'"; x.fillText((d.title || "").toUpperCase(), 90, 1480) }
-  else if (kind === "card") { await drawCard(x, d, 140, 380, 800) }
-  x.fillStyle = "#B30838"; x.fillRect(0, 1880, 1080, 40); x.fillStyle = "rgba(255,255,255,.55)"; x.font = "600 34px Barlow"; x.fillText("#ClearyStandard", 90, 1820);
-  c.toBlob(async b => { const f = new File([b], "cleary-" + kind + ".png", { type: "image/png" });
-    if (navigator.canShare && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f], title: "Cleary Baseball" }); return } catch (e) { if (e.name === "AbortError") return } }
-    const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = f.name; a.click(); toast("Image saved — post it to your story") }, "image/png") }
+  const c = document.createElement("canvas"); c.width = 1080; c.height = 1920; const x = c.getContext("2d"); try { await Promise.all(["italic 800 100px 'Barlow Condensed'", "800 100px 'Barlow Condensed'", "700 40px 'Barlow Condensed'", "700 30px Barlow"].map(s => document.fonts.load(s))); await document.fonts.ready } catch (e) { }
+  const M = CFG.me || {}, who = ((M.fn || "") + " " + (M.ln || "")).trim().toUpperCase(), tag = [M.num ? "#" + M.num : "", M.pos === "Pitcher" ? "PITCHER" : M.pos ? "POSITION PLAYER" : "", M.cls ? M.cls.toUpperCase() : ""].filter(Boolean).join("  ·  ");
+  const T = findToday(), when = nice(new Date()).toUpperCase() + "  ·  PHASE " + PH[T.p].n + " · WEEK " + PH[T.p].weeks[T.w].n;
+  /* night stadium backdrop */
+  let g = x.createLinearGradient(0, 0, 0, 1920); g.addColorStop(0, "#040A1C"); g.addColorStop(.5, "#0A1A3D"); g.addColorStop(1, "#050B1C"); x.fillStyle = g; x.fillRect(0, 0, 1080, 1920);
+  [[80, -40], [1000, -40]].forEach(([bx, by]) => { const b = x.createRadialGradient(bx, by, 10, bx, by, 1100); b.addColorStop(0, "rgba(255,246,208,.38)"); b.addColorStop(.35, "rgba(255,246,208,.10)"); b.addColorStop(1, "rgba(255,246,208,0)"); x.fillStyle = b; x.fillRect(0, 0, 1080, 1920) });
+  for (let s = 0; s < 2; s++) { x.save(); x.globalAlpha = .05; x.fillStyle = "#FFF6D0"; x.beginPath(); const sx = s ? 1000 : 80; x.moveTo(sx, 0); x.lineTo(s ? 200 : 880, 1500); x.lineTo(s ? 520 : 560, 1500); x.closePath(); x.fill(); x.restore() }
+  x.save(); x.translate(540, 1980); x.rotate(Math.PI / 4); const fg = x.createLinearGradient(-600, -600, 0, 0); fg.addColorStop(0, "#0F4A2A"); fg.addColorStop(1, "#08281A"); x.fillStyle = fg; x.fillRect(-620, -620, 1240, 1240); x.fillStyle = "rgba(122,78,42,.45)"; x.fillRect(-420, -420, 840, 840); x.fillStyle = "#0C3F24"; x.fillRect(-300, -300, 600, 600); x.restore();
+  const vg = x.createRadialGradient(540, 900, 300, 540, 900, 1200); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.6)"); x.fillStyle = vg; x.fillRect(0, 0, 1080, 1920);
+  for (let i = 0; i < 70; i++) { x.fillStyle = `rgba(255,255,255,${(Math.random() * .5 + .1).toFixed(2)})`; x.beginPath(); x.arc(Math.random() * 1080, Math.random() * 900, Math.random() * 2.2, 0, 7); x.fill() }
+  const logo = await loadImg("img/cu.png"); if (logo) { x.save(); x.shadowColor = "rgba(232,39,79,.7)"; x.shadowBlur = 50; const w = 300, h = w * logo.height / logo.width; x.drawImage(logo, 540 - w / 2, 120, w, h); x.restore() }
+  const ctr = (t, y, font, col, ls) => { x.font = font; x.fillStyle = col; if (ls) { x.letterSpacing = ls + "px" } x.textAlign = "center"; x.fillText(t, 540, y); x.letterSpacing = "0px" };
+  ctr("CLEARY BASEBALL  ·  WEIGHT ROOM", 380, "700 34px 'Barlow Condensed', sans-serif", "#9DB0CC", 6);
+  const pill = (t, y, bg, fg, font) => { x.font = font; const w = x.measureText(t).width + 80; x.fillStyle = bg; rr(0, x, 540 - w / 2, y - 58, w, 84, 42); x.fill(); x.fillStyle = fg; x.textAlign = "center"; x.fillText(t, 540, y) };
+  if (kind === "pr") {
+    x.save(); x.translate(540, 560); x.rotate(-.06); x.fillStyle = "#B30838"; x.fillRect(-380, -95, 760, 170); x.fillStyle = "#7E0628"; x.fillRect(-380, 75, 760, 16);
+    x.font = "italic 800 190px 'Barlow Condensed', 'Arial Narrow', sans-serif"; x.textAlign = "center"; x.fillStyle = "#fff"; x.fillText("NEW PR", 0, 62); x.restore();
+    ctr(d.name.toUpperCase(), 790, "800 64px 'Barlow Condensed', 'Arial Narrow', sans-serif", "#fff");
+    x.save(); x.shadowColor = "rgba(243,195,74,.8)"; x.shadowBlur = 60; const gg = x.createLinearGradient(0, 860, 0, 1180); gg.addColorStop(0, "#FFE9A8"); gg.addColorStop(1, "#E0A52E"); x.fillStyle = gg; x.font = "italic 800 330px 'Barlow Condensed', 'Arial Narrow', sans-serif"; x.textAlign = "center"; x.fillText(String(d.w), 520, 1150); x.restore();
+    ctr("POUNDS", 1225, "800 44px 'Barlow Condensed', 'Arial Narrow', sans-serif", "#F3C34A", 14);
+    pill("+" + (d.w - d.prev) + " LB OVER MY BEST", 1350, "rgba(47,184,115,.22)", "#7FE0A8", "800 46px 'Barlow Condensed', 'Arial Narrow', sans-serif") }
+  else if (kind === "day") {
+    ctr("WORKOUT", 560, "italic 800 170px 'Barlow Condensed', 'Arial Narrow', sans-serif", "#fff"); ctr("COMPLETE", 720, "italic 800 170px 'Barlow Condensed', 'Arial Narrow', sans-serif", "#F3C34A");
+    ctr((d.title || "").toUpperCase(), 800, "700 44px 'Barlow Condensed', 'Arial Narrow', sans-serif", "#C9D6EA", 4);
+    x.fillStyle = "#0B1226"; rr(0, x, 110, 860, 860, 520, 36); x.fill(); x.lineWidth = 6; x.strokeStyle = "#26324F"; x.stroke();
+    const st = [["SETS", fmt(d.sets)], ["LB MOVED", fmt(d.lb)], ["XP", "+" + fmt(d.xp)], ["STREAK", String(d.streak)]];
+    st.forEach(([l, v], i) => { const X = 150 + (i % 2) * 400, Y = 900 + Math.floor(i / 2) * 230; x.fillStyle = "#050A18"; rr(0, x, X, Y, 380, 200, 22); x.fill();
+      x.save(); x.shadowColor = "rgba(255,224,138,.7)"; x.shadowBlur = 24; x.fillStyle = "#FFE08A"; x.font = "800 104px 'Barlow Condensed', 'Arial Narrow', sans-serif"; x.textAlign = "center"; x.fillText(v, X + 190, Y + 120); x.restore();
+      x.fillStyle = "#9DB0CC"; x.font = "700 32px Barlow, sans-serif"; x.textAlign = "center"; x.fillText(l, X + 190, Y + 172) });
+    if (d.ghost) ctr(d.ghost.toUpperCase(), 1450, "800 42px 'Barlow Condensed', 'Arial Narrow', sans-serif", d.beat === false ? "#FF8AA0" : "#7FE0A8", 2) }
+  else if (kind === "card") { ctr("MY PLAYER CARD", 470, "italic 800 80px 'Barlow Condensed', 'Arial Narrow', sans-serif", "#fff"); await drawCard(x, d, 190, 520, 700) }
+  /* player line + footer */
+  if (kind !== "card" && who) { ctr(who, 1600, "italic 800 78px 'Barlow Condensed', 'Arial Narrow', sans-serif", "#fff"); if (tag) ctr(tag, 1660, "700 34px 'Barlow Condensed', 'Arial Narrow', sans-serif", "#9DB0CC", 4) }
+  ctr(when, 1745, "600 30px Barlow, sans-serif", "rgba(201,214,234,.7)", 2);
+  x.fillStyle = "#B30838"; x.fillRect(0, 1860, 1080, 60); x.fillStyle = "#fff"; x.font = "800 34px 'Barlow Condensed', 'Arial Narrow', sans-serif"; x.textAlign = "left"; x.letterSpacing = "4px"; x.fillText("#CLEARYSTANDARD", 60, 1903); x.textAlign = "right"; x.fillText("CU LIFTING", 1020, 1903); x.letterSpacing = "0px"; x.textAlign = "left";
+  c.toBlob(async b => { const fl = new File([b], "cleary-" + kind + ".png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [fl] })) { try { await navigator.share({ files: [fl], title: "Cleary Baseball" }); return } catch (e) { if (e.name === "AbortError") return } }
+    const prevO = overlay(`<div class="shprev"><img src="${URL.createObjectURL(b)}" alt="Story image"><p class="fine">Press and hold the image to save it, then post it to your story.</p><a class="pill gold" download="${fl.name}" href="${URL.createObjectURL(b)}">Download</a><button class="pill ghost" data-close>Close</button></div>`, "center") }, "image/png") }
 function wrap(x, t, X, Y, W, L) { const w = t.split(" "); let line = ""; for (const s of w) { const tt = line ? line + " " + s : s; if (x.measureText(tt).width > W && line) { x.fillText(line, X, Y); Y += L; line = s } else line = tt } x.fillText(line, X, Y) }
-async function drawCard(x, d, X, Y, W) { const H = W * 1.4; const col = { base: "#6A7FA3", rare: "#3A78C2", foil: "#F3C34A", leg: "#E8274F" }[d.rar[1]];
+async function drawCard(x, d, X, Y, W) { x.textAlign = "left"; const H = W * 1.4; const col = { base: "#6A7FA3", rare: "#3A78C2", foil: "#F3C34A", leg: "#E8274F" }[d.rar[1]];
   x.save(); x.shadowColor = col; x.shadowBlur = 60; x.fillStyle = "#0F1E40"; rr(0, x, X, Y, W, H, 40); x.fill(); x.restore();
   x.lineWidth = 14; x.strokeStyle = col; rr(0, x, X, Y, W, H, 40); x.stroke();
   const ph = d.photo ? await loadImg(d.photo) : null; x.save(); rr(0, x, X + 40, Y + 40, W - 80, W * .78, 24); x.clip(); const gg = x.createLinearGradient(0, Y, 0, Y + W * .8); gg.addColorStop(0, "#1B315F"); gg.addColorStop(1, "#07122A"); x.fillStyle = gg; x.fillRect(X, Y, W, W);

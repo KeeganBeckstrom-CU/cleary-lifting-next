@@ -1,6 +1,6 @@
 /* ============ CU LIFTING · screens ============ */
 "use strict";
-let view = "today", SEL = null, WO = null, BOARD = "streak", RT = null;
+let view = "gym", SEL = null, WO = null, BOARD = "streak", RT = null;
 const I = {
   bolt: '<svg class="ico" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>', map: '<svg class="ico" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>',
   team: '<svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M3 19c.8-3.4 3.2-5 6-5s5.2 1.6 6 5M14.5 14.6c2.8-.4 5.4 1 6.3 4.4"/></svg>',
@@ -8,6 +8,7 @@ const I = {
   me: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.4 4.2-6.5 8-6.5s7 2.1 8 6.5"/></svg>',
   play: '<svg class="ico" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg>', music: '<svg class="ico" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
   snd: '<svg class="ico" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>', mute: '<svg class="ico" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
+  gym: '<svg class="ico" viewBox="0 0 24 24"><path d="M3 10v4M6 7v10M18 7v10M21 10v4M6 12h12"/></svg>',
   clip: '<svg class="ico" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM8.5 12h7M8.5 16h5"/></svg>',
   x: '<svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>', list: '<svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
   fwd: '<svg class="ico" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>', back: '<svg class="ico" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>', check: '<svg class="ico" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -17,16 +18,16 @@ const curT = () => SEL || findToday();
 /* ===================== shell ===================== */
 function render() { MEMO = {}; const m = $("#main"); if (!CFG.me && !isCoach()) { m.innerHTML = welcomeHTML(); $("#nav").hidden = true; return }
   const pv = isCoach() && CFG.pview; document.body.classList.toggle("pview", !!pv);
-  if (!CFG.me && ["today", "trophies"].includes(view)) view = "coach";
-  if (pv && view === "coach") view = "today";
+  if (!CFG.me && ["today", "trophies", "gym"].includes(view)) view = "coach";
+  if (pv && view === "coach") view = "gym";
   const tabs = isCoach() && !pv ? [["coach", "Coach", I.clip]].concat(CFG.me ? [["today", "Today", I.bolt]] : [], [["season", "Season", I.map], ["team", "Team", I.team], ["me", "Me", I.me]])
-    : [["today", "Today", I.bolt], ["season", "Season", I.map], ["team", "Team", I.team], ["trophies", "Trophies", I.cup], ["me", "Me", I.me]];
+    : [["gym", "Gym", I.gym], ["today", "Today", I.bolt], ["season", "Season", I.map], ["team", "Team", I.team], ["me", "Me", I.me]];
   $("#nav").hidden = false; $("#nav").innerHTML = tabs.map(([k, l, ic]) =>
-    `<button class="${view === k ? "on" : ""}" data-nav="${k}">${ic}<span>${l}</span>${k === "trophies" && unopened().length ? `<i class="dot">${unopened().length}</i>` : ""}</button>`).join("");
+    `<button class="${view === k ? "on" : ""}" data-nav="${k}">${ic}<span>${l}</span>${k === "gym" && unopened().length ? `<i class="dot">${unopened().length}</i>` : ""}</button>`).join("");
   $("#nav").style.gridTemplateColumns = `repeat(${tabs.length},1fr)`;
-  m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML, tour: tourHTML }[view] || todayHTML)();
+  m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML, tour: tourHTML, gym: gymHTML }[view] || gymHTML)();
   if (pv) m.innerHTML = `<div class="pvbar"><span>${I.me} Player view</span><button data-pvoff>Back to coach</button></div>` + m.innerHTML;
-  IN_TOUR = view === "tour"; m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); if (view === "coach") coachLoad(); bindCards() }
+  IN_TOUR = view === "tour"; m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); if (view === "coach") coachLoad(); if (view === "gym") gymInit(); bindCards() }
 function go(v) { view = v; render(); scrollTo(0, 0) }
 
 /* ===================== welcome / profile ===================== */
@@ -37,7 +38,7 @@ function welcomeHTML() { return `<div class="welcome"><div class="wscene">${scen
   <div class="seg" data-seg="pos"><button type="button" class="on" data-v="Position">Position player</button><button type="button" data-v="Pitcher">Pitcher</button></div><input type="hidden" name="pos" value="Position">
   <button class="skew big">Let's lift</button></form><button class="linkb ctr" data-clogin>Coach? Sign in here →</button></div>` }
 function saveProfile(f) { const d = Object.fromEntries(new FormData(f)); CFG.me = { fn: d.fn.trim(), ln: d.ln.trim(), num: d.num.trim(), cls: d.cls, pos: d.pos, u: nrm(d.fn + d.ln) }; saveNow();
-  const o = overlay(`<div class="hello"><small>Welcome</small><b>${esc(CFG.me.fn)}<br>${esc(CFG.me.ln)}</b><span>#${esc(CFG.me.num || "—")} · ${esc(CFG.me.pos === "Pitcher" ? "Pitcher" : "Position player")}</span></div>`, "center hellov"); setTimeout(() => { closeOv(o); render() }, 1700) }
+  const o = overlay(`<div class="hello"><small>Welcome</small><b>${esc(CFG.me.fn)}<br>${esc(CFG.me.ln)}</b><span>#${esc(CFG.me.num || "—")} · ${esc(CFG.me.pos === "Pitcher" ? "Pitcher" : "Position player")}</span></div>`, "center hellov"); setTimeout(() => { closeOv(o); view = "gym"; GYM_INTRO = false; render() }, 1700) }
 
 /* ===================== scenes (hero art reused from the map) ===================== */
 function zoneOf(p) { return ZONES.find(z => z.ps.includes(p)) || ZONES[0] }
@@ -165,13 +166,13 @@ function lvCheck(was) { MEMO = {}; const x = xpInfo(); if (x.li > (CFG.seen.li ?
 /* ---- rest timer (auto-starts when you check a set) ---- */
 function startRest(sec, label) { RT = { end: Date.now() + sec * 1000, tot: sec, label: label || "Rest" }; drawRest(); clearInterval(RT.iv); RT.iv = setInterval(drawRest, 250) }
 function stopRest() { if (RT) clearInterval(RT.iv); RT = null; const e = $("#rest"); if (e) e.innerHTML = "" }
-function drawRest() { const e = $("#rest"); if (!RT || !e) return; const left = Math.max(0, Math.ceil((RT.end - Date.now()) / 1000)), k = left / RT.tot;
-  if (left <= 0 && !RT.rang) { RT.rang = 1; sfx("beep"); buzz([120, 80, 120]) }
-  if (!e.querySelector(".restbar")) e.innerHTML = `<div class="restbar"><div class="rring"><b></b></div><div class="rl"><b></b><small></small></div><button data-radd="-15">−15</button><button data-radd="15">+15</button><button data-rskip>Skip</button></div>`;
-  const bar = e.querySelector(".restbar"), go = left <= 0; bar.classList.toggle("go", go); bar.querySelector(".rring").style.setProperty("--p", Math.round(k * 100));
-  bar.querySelector(".rring b").textContent = go ? "GO" : Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0");
-  bar.querySelector(".rl b").textContent = go ? "Time — next set" : RT.label; bar.querySelector(".rl small").textContent = RT.tot + "s"; bar.querySelector("[data-rskip]").textContent = go ? "Close" : "Skip";
-  if ((RT.end - Date.now()) / 1000 <= -20) stopRest() }
+function drawRest() { const e = $("#rest"); if (!RT || !e) return; const raw = (RT.end - Date.now()) / 1000, left = Math.max(0, Math.ceil(raw)), k = left / RT.tot, go = left <= 0;
+  if (go && !RT.rang) { RT.rang = 1; sfx("beep"); buzz([80, 60, 80]) }
+  if (!e.querySelector(".rest2")) e.innerHTML = `<div class="rest2"><button class="r2m" data-radd="-15" aria-label="Less rest">−</button><div class="r2r"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5" class="r2bg"/><circle cx="18" cy="18" r="15.5" class="r2fg" pathLength="100"/></svg><b></b></div><span class="r2l"></span><button class="r2m" data-radd="15" aria-label="More rest">+</button><button class="r2x" data-rskip aria-label="Close timer">✕</button></div>`;
+  const bar = e.querySelector(".rest2"); bar.classList.toggle("go", go); bar.querySelector(".r2fg").style.strokeDasharray = (go ? 100 : Math.round(k * 100)) + " 100";
+  bar.querySelector(".r2r b").textContent = go ? "✓" : (left >= 60 ? Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0") : left);
+  bar.querySelector(".r2l").textContent = go ? "Rest's up" : RT.label;
+  if (raw <= -8) stopRest() }
 
 /* ---- finishing ---- */
 function finishWorkout() { const { p, w, d } = WO, k = K(p, w, d), st = sessionStats(p, w, d), gh = ghost(p, w, d), wasLi = CFG.seen.li;
@@ -229,7 +230,7 @@ function teamHTML() { const rows = teamRows(), goal = 25000000, vol = rows.reduc
    ${myI >= 10 ? `<div class="br me"><span class="bi">${myI + 1}</span><b>${esc(myName())}</b><small>you</small><em>${B[2](B[1](list[myI]))}</em></div>` : ""}${!CFG.share.boards ? `<p class="fine">You're hidden from leaderboards (Me → Privacy).</p>` : ""}</div>
    <p class="fine">Most improved compares you to your own starting numbers, so everyone can win it.</p>
    <div class="sec-h"><h2>Feed</h2></div>${feedHTML(30)}<p class="fine sample">Sample team for now. Real teammates show up here once accounts are connected.</p></div>` }
-function topbar(t, s) { return `<header class="tbar"><div class="tbs">${sceneSVG(zoneOf(findToday().p).kind)}</div><div class="tbi"><img src="img/cu.png" alt=""><div><b>${esc(t)}</b><small>${esc(s || "")}</small></div></div></header>` }
+function topbar(t, s) { return `<header class="tbar">${["trophies", "tour"].includes(view) ? `<button class="tback" data-nav="gym">‹ Weight room</button>` : ""}<div class="tbs">${sceneSVG(zoneOf(findToday().p).kind)}</div><div class="tbi"><img src="img/cu.png" alt=""><div><b>${esc(t)}</b><small>${esc(s || "")}</small></div></div></header>` }
 
 /* ===================== TROPHIES / HALL OF FAME ===================== */
 function hofRecords() { const out = {}; const prs = prEvents(); MAIN.forEach(k => { let best = null; EXIDX[k].forEach(x => PH[x.p].weeks.forEach((_, w) => { const t = topSet(x.p, w, x.d, x.bi, x.ei); if (t && (!best || t > best.w)) best = { w: t, dt: sessDate(x.p, w, x.d), name: x.e.name, check: prs.some(e => nrm(e.name) === k && e.w === t && e.check) } }));
@@ -316,14 +317,27 @@ function excuseSheet() { const T = curT(); const o = sheet("Can't lift today?", 
 function plates() { const o = sheet("Plate math", `<p class="lead">Per side, on a 45 lb bar.</p><div class="pm"><input inputmode="decimal" placeholder="Total lb" id="pmw"><div id="pmo" class="pmo"></div></div>`);
   const inp = o.querySelector("#pmw"); inp.focus(); inp.oninput = () => { let left = (+inp.value - 45) / 2; const out = []; if (left < 0) { o.querySelector("#pmo").innerHTML = "Less than the bar"; return }
     [45, 35, 25, 10, 5, 2.5].forEach(p => { while (left >= p - 1e-9) { out.push(p); left -= p } }); o.querySelector("#pmo").innerHTML = out.length ? out.map(p => `<span class="plate p${String(p).replace(".", "_")}">${p}</span>`).join("") + (left > .01 ? `<small>+${left.toFixed(1)} won't load evenly</small>` : "") : "Just the bar" } }
-function walkSetup() { const W = CFG.walk || {}; const o = sheet("Walk-up song", `<p class="lead">Your song for top sets and PR attempts. The 🎵 button is always in the workout screen, even with sounds off.</p>
-  <label class="pill wide">Pick a song file from this phone<input type="file" accept="audio/*" data-walkfile hidden></label>${W.kind === "file" ? `<p class="fine">Current: ${esc(W.name)}</p>` : ""}
-  <div class="frow"><label>Start at (sec)<input inputmode="numeric" id="wst" value="${esc(W.start || 0)}"></label><label>Play for (sec)<input inputmode="numeric" id="wln" value="${esc(W.len || 25)}"></label></div>
-  <p class="or">or paste a Spotify / Apple Music / YouTube link</p><input class="linkin" id="wurl" placeholder="https://open.spotify.com/track/…" value="${esc(W.kind === "link" ? W.url : "")}">
-  <div class="btn2"><button class="pill gold" id="wsave">Save</button><button class="pill" id="wtest">${I.play} Test</button></div>`);
-  o.querySelector("[data-walkfile]").onchange = async e => { const f = e.target.files[0]; if (!f) return; await IDB.put("walk", f); CFG.walk = { kind: "file", name: f.name, start: +o.querySelector("#wst").value || 0, len: +o.querySelector("#wln").value || 25 }; saveNow(); toast("Song saved on this phone"); closeOv(o); render() };
-  o.querySelector("#wsave").onclick = () => { const u = o.querySelector("#wurl").value.trim(); if (u) CFG.walk = { kind: "link", url: u }; else if (CFG.walk) Object.assign(CFG.walk, { start: +o.querySelector("#wst").value || 0, len: +o.querySelector("#wln").value || 25 }); saveNow(); closeOv(o); render() };
-  o.querySelector("#wtest").onclick = () => playWalkup() }
+function walkSetup() { const W = CFG.walk || null; const mmss = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+  const lens = [10, 15, 20, 25, 30, 45];
+  const body = `${W && W.kind === "file" ? `<div class="wsong"><div class="wdisc">${I.music}</div><div><b>${esc(W.name.replace(/\.[a-z0-9]+$/i, ""))}</b><small>Saved on this phone</small></div></div>
+    <label class="wlab">Start at <b id="wstv">${mmss(W.start || 0)}</b></label><input type="range" id="wsr" min="0" max="${Math.max(30, Math.floor(W.dur || 240))}" step="1" value="${W.start || 0}">
+    <div class="wrow"><button class="pill sm" id="wnudgeM">−5s</button><button class="pill gold sm" id="wprev">${I.play} Preview from here</button><button class="pill sm" id="wnudgeP">+5s</button></div>
+    <label class="wlab">Play for</label><div class="seg wlens">${lens.map(n => `<button class="${(W.len || 25) === n ? "on" : ""}" data-wl="${n}">${n}s</button>`).join("")}</div>
+    <div class="btn2"><button class="pill gold" id="wsave">Save</button><label class="pill">Change song<input type="file" accept="audio/*" data-walkfile hidden></label></div><button class="linkb sm danger" id="wdel">Remove song</button>`
+   : W && W.kind === "link" ? `<p class="lead">Your walk-up is a link — it opens in that app when you tap 🎵.</p><input class="linkin" id="wurl" value="${esc(W.url)}"><div class="btn2"><button class="pill gold" id="wsave">Save link</button><label class="pill">Use a song file instead<input type="file" accept="audio/*" data-walkfile hidden></label></div><button class="linkb sm danger" id="wdel">Remove</button>`
+   : `<p class="lead">Your song for top sets and PR attempts. The 🎵 button is always in the workout screen, even with sounds off.</p><label class="pill gold wide">Pick a song file from this phone<input type="file" accept="audio/*" data-walkfile hidden></label>
+    <p class="fine">After you pick it, you can choose exactly where it starts.</p><p class="or">or paste a Spotify / Apple Music / YouTube link</p><input class="linkin" id="wurl" placeholder="https://open.spotify.com/track/…"><button class="pill wide" id="wsave">Save link</button>`}`;
+  const o = sheet("Walk-up song", body); let prev = null, len = (W && W.len) || 25;
+  const stopPrev = () => { if (prev) { prev.pause(); prev = null } }; o.addEventListener("click", e => { if (e.target.closest("[data-close]") || e.target === o) stopPrev() });
+  const sr = o.querySelector("#wsr"), stv = o.querySelector("#wstv"); if (sr) sr.oninput = () => { stv.textContent = mmss(+sr.value) };
+  if (sr) IDB.get("walk").then(b => { if (!b) return; const a = new Audio(URL.createObjectURL(b)); a.onloadedmetadata = () => { if (isFinite(a.duration)) { sr.max = Math.floor(a.duration); W.dur = a.duration } } });
+  o.querySelectorAll("[data-wl]").forEach(b => b.onclick = () => { len = +b.dataset.wl; o.querySelectorAll("[data-wl]").forEach(x => x.classList.toggle("on", x === b)) });
+  ["M", "P"].forEach(s => { const b = o.querySelector("#wnudge" + s); if (b) b.onclick = () => { sr.value = clamp(+sr.value + (s === "P" ? 5 : -5), 0, +sr.max); sr.oninput() } });
+  const pv = o.querySelector("#wprev"); if (pv) pv.onclick = async () => { if (prev) { stopPrev(); pv.innerHTML = `${I.play} Preview from here`; return } const b = await IDB.get("walk"); if (!b) return;
+    prev = new Audio(URL.createObjectURL(b)); prev.currentTime = +sr.value; prev.play().catch(() => { }); pv.textContent = "■ Stop"; const me = prev; setTimeout(() => { if (me === prev) { stopPrev(); pv.innerHTML = `${I.play} Preview from here` } }, len * 1000) };
+  o.querySelector("[data-walkfile]").onchange = async e => { const f = e.target.files[0]; if (!f) return; stopPrev(); await IDB.put("walk", f); CFG.walk = { kind: "file", name: f.name, start: 0, len }; saveNow(); closeOv(o); toast("Song saved — now pick where it starts"); setTimeout(walkSetup, 300) };
+  const sv = o.querySelector("#wsave"); if (sv) sv.onclick = () => { stopPrev(); const u = o.querySelector("#wurl"); if (u) { if (!u.value.trim()) return; CFG.walk = { kind: "link", url: u.value.trim() } } else Object.assign(CFG.walk, { start: +sr.value, len, dur: W.dur }); saveNow(); closeOv(o); toast("Walk-up song saved"); render() };
+  const dl = o.querySelector("#wdel"); if (dl) dl.onclick = () => { stopPrev(); CFG.walk = null; saveNow(); closeOv(o); toast("Walk-up song removed"); render() } }
 const openWalkSetup = walkSetup;
 function keySheet() { sheet("Abbreviations & RPE", ABBR.map(([g, l]) => `<h4 class="kg">${esc(g)}</h4><dl class="kdl">${l.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join("")}</dl>`).join("") + `<h4 class="kg">RPE scale</h4><dl class="kdl">${RPE.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
   ${EXTRA.rpe ? `<button class="pill ghost wide" data-vid="${esc(EXTRA.rpe)}" data-vt="RPE explained">${I.play} RPE video</button>` : ""}${EXTRA.tempo ? `<button class="pill ghost wide" data-vid="${esc(EXTRA.tempo)}" data-vt="Tempo explained">${I.play} Tempo video</button>` : ""}`, "tall") }
@@ -394,8 +408,9 @@ document.addEventListener("submit", e => { if (e.target.matches("[data-profile]"
 document.addEventListener("click", e => { const t = e.target.closest("button,[data-nav],[data-wk],[data-mph],[data-cap],[data-opencap],a,label,u"); if (!t) return; const D = t.dataset;
   if (D.nav) { if (D.nav !== view || !t.closest("#nav")) go(D.nav); return }
   if (D.radd && RT) { RT.end += +D.radd * 1000; RT.tot = Math.max(RT.tot, Math.ceil((RT.end - Date.now()) / 1000)); RT.rang = 0; drawRest(); return } if ("rskip" in D) { stopRest(); return }
+  if (D.gym) { gymGo(D.gym, t); return }
   if (D.demo) { demo(D.demo, t); return } if ("tsnd" in D) { DEMO_SND = !DEMO_SND; render(); return } if ("tour" in D) { go("tour"); return }
-  if ("pvon" in D) { CFG.pview = true; if (!CFG.me) CFG.me = { fn: "Player", ln: "Preview", num: "00", cls: "Fr", pos: "Position", u: "preview", preview: 1 }; saveNow(); $$(".ov").forEach(o => closeOv(o)); view = "today"; render(); scrollTo(0, 0); return }
+  if ("pvon" in D) { CFG.pview = true; if (!CFG.me) CFG.me = { fn: "Player", ln: "Preview", num: "00", cls: "Fr", pos: "Position", u: "preview", preview: 1 }; saveNow(); $$(".ov").forEach(o => closeOv(o)); view = "gym"; render(); scrollTo(0, 0); return }
   if ("pvoff" in D) { CFG.pview = false; if (CFG.me && CFG.me.preview) CFG.me = null; saveNow(); view = "coach"; render(); scrollTo(0, 0); return }
   if ("clogin" in D) { coachLoginSheet(); return } if ("cout" in D) { coachOut(); return } if ("creload" in D) { coachLoad(true); return }
   if (D.csort) { CSORT = D.csort; render(); return } if (D.cpos) { CPOS = D.cpos; render(); return } if (D.cp) { cPlayerSheet(D.cp); return }
