@@ -8,17 +8,22 @@ const I = {
   me: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.4 4.2-6.5 8-6.5s7 2.1 8 6.5"/></svg>',
   play: '<svg class="ico" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg>', music: '<svg class="ico" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
   snd: '<svg class="ico" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>', mute: '<svg class="ico" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
+  clip: '<svg class="ico" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM8.5 12h7M8.5 16h5"/></svg>',
   x: '<svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>', list: '<svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
   fwd: '<svg class="ico" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>', back: '<svg class="ico" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>', check: '<svg class="ico" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   flame: '<svg class="ico" viewBox="0 0 24 24"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 1.5-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z" fill="currentColor" stroke="none"/></svg>', lock: '<svg class="ico" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>' };
 const curT = () => SEL || findToday();
 
 /* ===================== shell ===================== */
-function render() { MEMO = {}; const m = $("#main"); if (!CFG.me) { m.innerHTML = welcomeHTML(); $("#nav").hidden = true; return }
-  $("#nav").hidden = false; $("#nav").innerHTML = [["today", "Today", I.bolt], ["season", "Season", I.map], ["team", "Team", I.team], ["trophies", "Trophies", I.cup], ["me", "Me", I.me]].map(([k, l, ic]) =>
+function render() { MEMO = {}; const m = $("#main"); if (!CFG.me && !isCoach()) { m.innerHTML = welcomeHTML(); $("#nav").hidden = true; return }
+  if (!CFG.me && ["today", "trophies"].includes(view)) view = "coach";
+  const tabs = isCoach() ? [["coach", "Coach", I.clip]].concat(CFG.me ? [["today", "Today", I.bolt]] : [], [["season", "Season", I.map], ["team", "Team", I.team], ["me", "Me", I.me]])
+    : [["today", "Today", I.bolt], ["season", "Season", I.map], ["team", "Team", I.team], ["trophies", "Trophies", I.cup], ["me", "Me", I.me]];
+  $("#nav").hidden = false; $("#nav").innerHTML = tabs.map(([k, l, ic]) =>
     `<button class="${view === k ? "on" : ""}" data-nav="${k}">${ic}<span>${l}</span>${k === "trophies" && unopened().length ? `<i class="dot">${unopened().length}</i>` : ""}</button>`).join("");
-  m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML }[view] || todayHTML)();
-  m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); bindCards() }
+  $("#nav").style.gridTemplateColumns = `repeat(${tabs.length},1fr)`;
+  m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML }[view] || todayHTML)();
+  m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); if (view === "coach") coachLoad(); bindCards() }
 function go(v) { view = v; render(); scrollTo(0, 0) }
 
 /* ===================== welcome / profile ===================== */
@@ -27,7 +32,7 @@ function welcomeHTML() { return `<div class="welcome"><div class="wscene">${scen
   <form class="wform" data-profile><div class="frow"><label>First name<input name="fn" required autocomplete="given-name"></label><label>Last name<input name="ln" required autocomplete="family-name"></label></div>
   <div class="frow"><label>Jersey #<input name="num" inputmode="numeric" maxlength="2"></label><label>Class<select name="cls"><option>Fr</option><option>So</option><option>Jr</option><option>Sr</option><option>Grad</option></select></label></div>
   <div class="seg" data-seg="pos"><button type="button" class="on" data-v="Position">Position player</button><button type="button" data-v="Pitcher">Pitcher</button></div><input type="hidden" name="pos" value="Position">
-  <button class="skew big">Let's lift</button></form></div>` }
+  <button class="skew big">Let's lift</button></form><button class="linkb ctr" data-clogin>Coach? Sign in here →</button></div>` }
 function saveProfile(f) { const d = Object.fromEntries(new FormData(f)); CFG.me = { fn: d.fn.trim(), ln: d.ln.trim(), num: d.num.trim(), cls: d.cls, pos: d.pos, u: nrm(d.fn + d.ln) }; saveNow();
   const o = overlay(`<div class="hello"><small>Welcome</small><b>${esc(CFG.me.fn)}<br>${esc(CFG.me.ln)}</b><span>#${esc(CFG.me.num || "—")} · ${esc(CFG.me.pos === "Pitcher" ? "Pitcher" : "Position player")}</span></div>`, "center hellov"); setTimeout(() => { closeOv(o); render() }, 1700) }
 
@@ -255,7 +260,8 @@ function cardPreview() { const d = cardData(); sheet("Player card", `<div class=
    <button class="skew red" data-cardon>${CFG.card ? "Card is on" : "Turn on my card"}</button>`, "tall") }
 function editions() { const T = findToday(); sheet("Your editions", `<div class="eds">${PH.map((Q, p) => { const unlocked = phaseWon(p) || p < T.p, d = unlocked ? cardData(p) : null;
   return `<div class="ed ${unlocked ? "" : "lock"}">${unlocked ? cardHTML(d) : `<div class="edl">${I.lock}<b>${esc(Q.short)}</b><small>Phase ${Q.n}</small></div>`}</div>` }).join("")}</div><p class="fine">An edition locks in when its phase ends.</p>`, "tall") }
-function meHTML() { const M = CFG.me, xp = xpInfo(), st = streakInfo(), bw = latestBW();
+function meHTML() { if (!CFG.me) return topbar("Me", "Coach account") + `<div class="body">${coachMeCard()}<div class="card setc"><button class="setsw" data-mkplayer><span><b>Also lift with the team?</b><small>Set up a player profile on this phone</small></span>${I.fwd}</button><button class="setsw" data-key><span><b>Abbreviations &amp; RPE guide</b><small>What RFE, SA, ECC… mean</small></span>${I.fwd}</button></div></div>`;
+  const M = CFG.me, xp = xpInfo(), st = streakInfo(), bw = latestBW();
   const sw = (k, on, t, s) => `<button class="setsw ${on ? "on" : ""}" data-sw="${k}"><span><b>${t}</b><small>${s}</small></span><i></i></button>`;
   let h = topbar("Me", M.fn + " " + M.ln) + `<div class="body"><div class="card prof"><div class="pnum">#${esc(M.num || "—")}</div><div><b>${esc(M.fn + " " + M.ln)}</b><small>${M.pos === "Pitcher" ? "Pitcher" : "Position player"} · ${esc(M.cls)}${CFG.title ? " · " + esc((REWARDS.find(x => x.id === CFG.title) || {}).n) : ""}</small></div><button class="pill sm" data-editprof>Edit</button></div>
    <div class="card lvl"><div class="lvh"><b>${esc(xp.name)}</b><span>${fmt(xp.xp)} XP</span></div><div class="xpbar big"><i style="width:${xp.next ? Math.round((xp.xp - xp.base) / (xp.next - xp.base) * 100) : 100}%"></i></div>
@@ -278,10 +284,10 @@ function meHTML() { const M = CFG.me, xp = xpInfo(), st = streakInfo(), bw = lat
    <button class="setsw" data-key><span><b>Abbreviations &amp; RPE guide</b><small>What RFE, SA, ECC… mean</small></span>${I.fwd}</button></div>
    <div class="sec-h"><h2>Bodyweight</h2><small>private · coaches only</small></div><div class="card bwc"><div><b>${bw ? bw + " lb" : "—"}</b><small>${CFG.bw.length ? "Last weigh-in " + nice(pd(CFG.bw.slice().sort((a, b) => a.d < b.d ? 1 : -1)[0].d)) : "Not logged"}</small></div><input inputmode="decimal" placeholder="Weigh-in (lb)" data-bwin><button class="pill sm" data-bwsave>Save</button></div>
    <p class="fine">Bodyweight never shows on your side of the app. Coaches use it for strength-to-bodyweight in their summary.</p>
-   <div class="sec-h"><h2>Coach summary</h2></div>${sw("coach", CFG.coach, "Coach view", "Show the coach's team summary below (preview — real coach accounts get this automatically)")}
-   ${CFG.coach ? coachSummary() : ""}
+   <div class="sec-h"><h2>Coach</h2></div>${coachMeCard()}
    <button class="linkb sm danger" data-reset>Reset my test data on this phone</button><p class="fine">Test build · saves on this phone only until accounts are connected.</p></div>`;
   return h }
+function coachMeCard() { return isCoach() ? `<div class="card cme"><div><b>Signed in as coach</b><small>${esc(COACH.user.email || "")}</small></div><button class="pill gold sm" data-nav="coach">Coach view</button><button class="pill ghost sm" data-cout>Sign out</button></div>` : coachGate() }
 function coachSummary() { const T = findToday(), need = PH[T.p].days.filter(D => !skipMsg(T.p, T.w, D.k)).length, rows = teamRows();
   const behind = rows.filter(r => r.wkDone < need).sort((a, b) => a.wkDone - b.wkDone), rel = rows.filter(r => r.bw && r.top).map(r => Object.assign({ rel: r.top / r.bw }, r)).sort((a, b) => b.rel - a.rel);
   const exc = Object.entries(CFG.exc), pend = prEvents().filter(e => e.check);
@@ -338,6 +344,9 @@ function bindCards() { $$("[data-tilt]").forEach(c => { if (c._t) return; c._t =
 document.addEventListener("submit", e => { if (e.target.matches("[data-profile]")) { e.preventDefault(); saveProfile(e.target) } });
 document.addEventListener("click", e => { const t = e.target.closest("button,[data-nav],[data-wk],[data-mph],[data-cap],[data-opencap],a,label,u"); if (!t) return; const D = t.dataset;
   if (D.nav) { if (D.nav !== view || !t.closest("#nav")) go(D.nav); return }
+  if ("clogin" in D) { coachLoginSheet(); return } if ("cout" in D) { coachOut(); return } if ("creload" in D) { coachLoad(true); return }
+  if (D.csort) { CSORT = D.csort; render(); return } if (D.cpos) { CPOS = D.cpos; render(); return } if (D.cp) { cPlayerSheet(D.cp); return }
+  if ("mkplayer" in D) { const o = $("#main"); o.innerHTML = welcomeHTML(); $("#nav").hidden = true; return }
   if (t.closest("[data-seg]")) { const g = t.closest("[data-seg]"); g.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === t)); const f = g.closest("form"); if (f) f.querySelector(`[name="${g.dataset.seg}"]`).value = D.v; return }
   if (D.cap || D.opencap) { e.stopPropagation(); $$(".ov").forEach(o => closeOv(o)); openCapsule(D.cap || D.opencap); return }
   if (D.wk) { const [p, w] = D.wk.split(".").map(Number); weekSheet(p, w); return } if (D.mph != null) { phaseSheet(+D.mph); return }
