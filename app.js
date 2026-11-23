@@ -24,9 +24,9 @@ function render() { MEMO = {}; const m = $("#main"); if (!CFG.me && !isCoach()) 
   $("#nav").hidden = false; $("#nav").innerHTML = tabs.map(([k, l, ic]) =>
     `<button class="${view === k ? "on" : ""}" data-nav="${k}">${ic}<span>${l}</span>${k === "trophies" && unopened().length ? `<i class="dot">${unopened().length}</i>` : ""}</button>`).join("");
   $("#nav").style.gridTemplateColumns = `repeat(${tabs.length},1fr)`;
-  m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML }[view] || todayHTML)();
+  m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML, tour: tourHTML }[view] || todayHTML)();
   if (pv) m.innerHTML = `<div class="pvbar"><span>${I.me} Player view</span><button data-pvoff>Back to coach</button></div>` + m.innerHTML;
-  m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); if (view === "coach") coachLoad(); bindCards() }
+  IN_TOUR = view === "tour"; m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); if (view === "coach") coachLoad(); bindCards() }
 function go(v) { view = v; render(); scrollTo(0, 0) }
 
 /* ===================== welcome / profile ===================== */
@@ -167,9 +167,11 @@ function startRest(sec, label) { RT = { end: Date.now() + sec * 1000, tot: sec, 
 function stopRest() { if (RT) clearInterval(RT.iv); RT = null; const e = $("#rest"); if (e) e.innerHTML = "" }
 function drawRest() { const e = $("#rest"); if (!RT || !e) return; const left = Math.max(0, Math.ceil((RT.end - Date.now()) / 1000)), k = left / RT.tot;
   if (left <= 0 && !RT.rang) { RT.rang = 1; sfx("beep"); buzz([120, 80, 120]) }
-  e.innerHTML = `<div class="restbar ${left <= 0 ? "go" : ""}"><div class="rring" style="--p:${Math.round(k * 100)}"><b>${left <= 0 ? "GO" : Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0")}</b></div><div class="rl"><b>${left <= 0 ? "Time — next set" : esc(RT.label)}</b><small>${RT.tot}s</small></div>
-   <button data-radd="-15">−15</button><button data-radd="15">+15</button><button data-rskip>${left <= 0 ? "Close" : "Skip"}</button></div>`;
-  if (left <= -20) stopRest() }
+  if (!e.querySelector(".restbar")) e.innerHTML = `<div class="restbar"><div class="rring"><b></b></div><div class="rl"><b></b><small></small></div><button data-radd="-15">−15</button><button data-radd="15">+15</button><button data-rskip>Skip</button></div>`;
+  const bar = e.querySelector(".restbar"), go = left <= 0; bar.classList.toggle("go", go); bar.querySelector(".rring").style.setProperty("--p", Math.round(k * 100));
+  bar.querySelector(".rring b").textContent = go ? "GO" : Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0");
+  bar.querySelector(".rl b").textContent = go ? "Time — next set" : RT.label; bar.querySelector(".rl small").textContent = RT.tot + "s"; bar.querySelector("[data-rskip]").textContent = go ? "Close" : "Skip";
+  if ((RT.end - Date.now()) / 1000 <= -20) stopRest() }
 
 /* ---- finishing ---- */
 function finishWorkout() { const { p, w, d } = WO, k = K(p, w, d), st = sessionStats(p, w, d), gh = ghost(p, w, d), wasLi = CFG.seen.li;
@@ -187,7 +189,7 @@ function phaseCine(p) { const Q = PH[p], c = cardRatings(p); sfx("roar"); buzz([
 /* ---- holds / clocks ---- */
 function hold(sec, k) { let left = sec || 0, up = !sec; const t0 = Date.now(); const o = overlay(`<div class="hold"><div class="hring"><b id="hv">${up ? "0" : left}</b><small>${up ? "seconds · go max" : "seconds"}</small></div><button class="pill gold" id="hstop">${up ? "Stop & log" : "Done"}</button><button class="pill ghost" data-close>Cancel</button></div>`, "center");
   sfx("pop"); const iv = setInterval(() => { const el = Math.floor((Date.now() - t0) / 1000); const v = up ? el : Math.max(0, sec - el); const hv = o.querySelector("#hv"); if (hv) hv.textContent = v; if (!up && v <= 0) { clearInterval(iv); sfx("beep"); buzz([100, 60, 100]); fin(sec) } }, 200);
-  function fin(v) { clearInterval(iv); if (up) setVal(k, "r", String(v)); closeOv(o); MEMO = {}; woRender(true); const b = $(`[data-ck="${k}"]`); if (b && !(rec(WO.p, WO.w, WO.d).s[k] || {}).d) check(k, b) }
+  function fin(v) { clearInterval(iv); if (!WO || !k) { closeOv(o); return } if (up) setVal(k, "r", String(v)); closeOv(o); MEMO = {}; woRender(true); const b = $(`[data-ck="${k}"]`); if (b && !(rec(WO.p, WO.w, WO.d).s[k] || {}).d) check(k, b) }
   o.querySelector("#hstop").onclick = () => fin(up ? Math.floor((Date.now() - t0) / 1000) : sec); o.addEventListener("click", e => { if (e.target.closest("[data-close]")) clearInterval(iv) }) }
 
 /* ===================== SEASON MAP ===================== */
@@ -205,16 +207,16 @@ function phaseSheet(p) { const Q = PH[p], s = phaseSessions(p), won = phaseWon(p
    <p class="lead">${esc(Q.purpose)}</p><div class="xpbar big"><i style="width:${s.tot ? Math.round(s.done / s.tot * 100) : 0}%"></i></div><p class="fine">${s.done} of ${s.tot} workouts done${won ? " · trophy earned" : " · finish them all to light the trophy"}</p>`) }
 
 /* ===================== CAPSULES ===================== */
-function openCapsule(key) { if (CFG.caps[key]) return; const rw = rewardFor(key), wkn = (allWeeks().find(x => PH[x.p].id + "-w" + (x.w + 1) === key) || {}).n || "";
+function openCapsule(key, demo) { if (CFG.caps[key] && !demo) return; const rw = demo ? REWARDS[demo % REWARDS.length] : rewardFor(key), wkn = demo ? "12" : (allWeeks().find(x => PH[x.p].id + "-w" + (x.w + 1) === key) || {}).n || "";
   const tier = { c: ["Common", "#5aa9ff"], r: ["Rare", "#b48cff"], l: ["Legendary", "#ffc94a"] }[rw.r];
   const o = overlay(`<div class="capstage" style="--gl:${tier[1]}"><div class="crays2"></div><div class="cglow"></div><div class="capsule"><div class="top"></div><div class="band"></div><div class="bot"><div class="odo">${String(wkn).padStart(2, "0").split("").map(c => `<span>${c}</span>`).join("")}</div></div></div>
    <div class="capcard"><div class="ccr" style="--rc:${tier[1]}"><small>${tier[0]}</small><div class="cci">${rw.k === "frame" ? "▣" : rw.k === "title" ? "❝" : "✦"}</div><b>${esc(rw.n)}</b><span>${rw.k === "frame" ? "Card frame" : rw.k === "title" ? "Title under your name" : "Profile badge"}</span></div></div>
-   <div class="capban">WEEK ${esc(wkn)} CAPSULE</div><p class="capmsg">Tap to open</p><button class="pill gold capdone" data-close>Add to collection</button></div>`, "center capov");
+   <div class="capban">WEEK ${esc(wkn)} CAPSULE</div><p class="capmsg">Tap to open</p><button class="pill gold capdone" data-close>${demo ? "Close demo" : "Add to collection"}</button></div>`, "center capov");
   const stg = o.querySelector(".capstage"); let opened = false;
   stg.addEventListener("click", e => { if (opened || e.target.closest("[data-close]")) return; opened = true; o.querySelector(".capmsg").textContent = ""; stg.classList.add("shake"); sfx("pop"); buzz(30);
     setTimeout(() => { stg.classList.remove("shake"); stg.classList.add("open"); sfx("open"); buzz([30, 40, 90]); if (rw.r !== "c") confetti(rw.r === "l" ? 140 : 60, o) }, 1000);
-    CFG.caps[key] = rw.id; if (!CFG.inv.includes(rw.id)) CFG.inv.push(rw.id); saveNow() });
-  o.addEventListener("click", e => { if (e.target.closest("[data-close]")) render() }) }
+    if (!demo) { CFG.caps[key] = rw.id; if (!CFG.inv.includes(rw.id)) CFG.inv.push(rw.id); saveNow() } });
+  o.addEventListener("click", e => { if (e.target.closest("[data-close]") && !demo) render() }) }
 
 /* ===================== TEAM ===================== */
 function teamHTML() { const rows = teamRows(), goal = 25000000, vol = rows.reduce((a, r) => a + r.vol, 0);
@@ -263,12 +265,13 @@ function cardPreview() { const d = cardData(); sheet("Player card", `<div class=
    <button class="skew red" data-cardon>${CFG.card ? "Card is on" : "Turn on my card"}</button>`, "tall") }
 function editions() { const T = findToday(); sheet("Your editions", `<div class="eds">${PH.map((Q, p) => { const unlocked = phaseWon(p) || p < T.p, d = unlocked ? cardData(p) : null;
   return `<div class="ed ${unlocked ? "" : "lock"}">${unlocked ? cardHTML(d) : `<div class="edl">${I.lock}<b>${esc(Q.short)}</b><small>Phase ${Q.n}</small></div>`}</div>` }).join("")}</div><p class="fine">An edition locks in when its phase ends.</p>`, "tall") }
-function meHTML() { if (!CFG.me) return topbar("Me", "Coach account") + `<div class="body">${coachMeCard()}<div class="card setc"><button class="setsw" data-mkplayer><span><b>Also lift with the team?</b><small>Set up a player profile on this phone</small></span>${I.fwd}</button><button class="setsw" data-key><span><b>Abbreviations &amp; RPE guide</b><small>What RFE, SA, ECC… mean</small></span>${I.fwd}</button></div></div>`;
+function meHTML() { if (!CFG.me) return topbar("Me", "Coach account") + `<div class="body">${coachMeCard()}${tourCard()}<div class="card setc"><button class="setsw" data-mkplayer><span><b>Also lift with the team?</b><small>Set up a player profile on this phone</small></span>${I.fwd}</button><button class="setsw" data-key><span><b>Abbreviations &amp; RPE guide</b><small>What RFE, SA, ECC… mean</small></span>${I.fwd}</button></div></div>`;
   const M = CFG.me, xp = xpInfo(), st = streakInfo(), bw = latestBW();
   const sw = (k, on, t, s) => `<button class="setsw ${on ? "on" : ""}" data-sw="${k}"><span><b>${t}</b><small>${s}</small></span><i></i></button>`;
   let h = topbar("Me", M.fn + " " + M.ln) + `<div class="body"><div class="card prof"><div class="pnum">#${esc(M.num || "—")}</div><div><b>${esc(M.fn + " " + M.ln)}</b><small>${M.pos === "Pitcher" ? "Pitcher" : "Position player"} · ${esc(M.cls)}${CFG.title ? " · " + esc((REWARDS.find(x => x.id === CFG.title) || {}).n) : ""}</small></div><button class="pill sm" data-editprof>Edit</button></div>
    <div class="card lvl"><div class="lvh"><b>${esc(xp.name)}</b><span>${fmt(xp.xp)} XP</span></div><div class="xpbar big"><i style="width:${xp.next ? Math.round((xp.xp - xp.base) / (xp.next - xp.base) * 100) : 100}%"></i></div>
     <small>${xp.next ? fmt(xp.next - xp.xp) + " XP to " + esc(xp.nextName) : "Max level"} · streak ${st.cur} (best ${st.best})</small><details><summary>Where your XP comes from</summary>${xp.parts.map(([a, b]) => `<div class="xr"><span>${a}</span><b>${fmt(b)}</b></div>`).join("")}<p class="fine">Showing up is worth the most. Finishing workouts beats lifting heavy.</p></details></div>`;
+  h += tourCard();
   h += `<div class="sec-h"><h2>Player card</h2><small>${CFG.card ? "On" : "Off · optional"}</small></div>`;
   if (CFG.card) { const d = cardData(); h += `<div class="mycard">${cardHTML(d)}</div><div class="btn3"><button class="pill gold sm" data-sharecard>Share to story</button><button class="pill sm" data-editions>Editions</button><label class="pill sm">Photo<input type="file" accept="image/*" data-photo hidden></label></div><div class="cardlinks"><button class="linkb sm" data-cardhow>How it's tracked</button><button class="linkb sm" data-cardoff>Turn card off</button></div>` }
   else h += `<button class="card cardoff" data-cardhow><div class="cmini">${I.lock}</div><div><b>See what your card would show</b><small>2K-style ratings from your own lifts, a new edition every phase. Totally optional.</small></div>${I.fwd}</button>`;
@@ -290,6 +293,7 @@ function meHTML() { if (!CFG.me) return topbar("Me", "Coach account") + `<div cl
    <div class="sec-h"><h2>Coach</h2></div>${coachMeCard()}
    <button class="linkb sm danger" data-reset>Reset my test data on this phone</button><p class="fine">Test build · saves on this phone only until accounts are connected.</p></div>`;
   return h }
+const tourCard = () => `<button class="tourcall" data-tour><span class="tsp">✦</span><span><b>Feature tour</b><small>See every animation — PRs, stadium lights, capsules, level ups</small></span>${I.fwd}</button>`;
 function coachMeCard() { return isCoach() ? `<div class="card cme"><div><b>Signed in as coach</b><small>${esc(COACH.user.email || "")}</small></div><button class="pill gold sm" data-nav="coach">Coach view</button><button class="pill sm" data-pvon>Player view</button><button class="pill ghost sm" data-cout>Sign out</button></div>` : coachGate() }
 function coachSummary() { const T = findToday(), need = PH[T.p].days.filter(D => !skipMsg(T.p, T.w, D.k)).length, rows = teamRows();
   const behind = rows.filter(r => r.wkDone < need).sort((a, b) => a.wkDone - b.wkDone), rel = rows.filter(r => r.bw && r.top).map(r => Object.assign({ rel: r.top / r.bw }, r)).sort((a, b) => b.rel - a.rel);
@@ -338,6 +342,48 @@ function editProfile() { const M = CFG.me; const o = sheet("Edit profile", `<for
   <label>Position<select name="pos"><option value="Position" ${M.pos !== "Pitcher" ? "selected" : ""}>Position player</option><option value="Pitcher" ${M.pos === "Pitcher" ? "selected" : ""}>Pitcher</option></select></label><button class="pill gold wide">Save</button></form>`);
   o.querySelector("form").onsubmit = e => { e.preventDefault(); Object.assign(CFG.me, Object.fromEntries(new FormData(e.target))); saveNow(); closeOv(o); render() } }
 
+
+/* ===================== FEATURE TOUR (demos only — nothing is saved) ===================== */
+const TOUR = [
+ ["In the workout", [
+  ["ask", "Sounds question", "Asked the first time a player starts a workout"],
+  ["set", "Checking a set", "Clack, buzz and +5 XP"],
+  ["stamp", "Exercise DONE stamp", "Every set of a lift checked off"],
+  ["rest", "Auto rest timer", "Starts by itself after each set"],
+  ["hold", "Hold timer", "For timed holds and carries"],
+  ["plates", "Plate math", "Per-side plates for any weight"],
+  ["walk", "Walk-up song", "Always available, even with sounds off"]]],
+ ["Big moments", [
+  ["pr", "New PR", "Beat your best on any lift"],
+  ["lights", "Stadium lights", "Finishing a whole workout"],
+  ["capsule", "Weekly capsule", "Finishing every workout in a week"],
+  ["capleg", "Legendary capsule", "The rare pull"],
+  ["level", "Level up", "Walk-On → Cougar Legend"],
+  ["phase", "Phase trophy", "Finishing every workout in a phase"]]],
+ ["Cards, sharing & more", [
+  ["card", "Player card preview", "What a player's card shows and how it's figured"],
+  ["sharepr", "Story image · PR", "What gets posted to Instagram"],
+  ["shareday", "Story image · workout", "Day recap for a story"],
+  ["excuse", "Can't lift today?", "Game, travel, sick or hurt — streak stays safe"],
+  ["install", "Add to Home Screen", "The install steps players see"],
+  ["confetti", "Confetti", "Just because"]]]];
+function tourHTML() { return topbar("Feature tour", "Every animation, nothing saved") + `<div class="body">
+  <div class="card tourtop"><div><b>Tap anything to see it</b><small>These are demos — no stats, streaks or capsules change.</small></div><button class="setsw ${DEMO_SND ? "on" : ""}" data-tsnd><span><b>Sound</b></span><i></i></button></div>
+  ${TOUR.map(([g, L]) => `<div class="sec-h"><h2>${g}</h2></div><div class="tgrid">${L.map(([k, n, s]) => `<button class="tbtn2" data-demo="${k}"><b>${n}</b><small>${s}</small></button>`).join("")}</div>`).join("")}
+  <p class="fine">Want to try a real workout? Start one from Today — logging there does count.</p></div>` }
+function demo(k, btn) { IN_TOUR = true; const D = { sets: 24, lb: 18450, xp: 245, prs: 2, streak: 9, title: "Wk 12 · Monday", ghost: "Beat your ghost by 1,240 lb", beat: true };
+  const fx = { ask: () => { const s = CFG.snd; CFG.snd = null; const o = sheet("Sounds during your lift?", `<p class="lead">Crowd roar on a PR, a clack when you check a set, a beep when rest is up.</p><p class="lead dim">Listening to your own music? Keep sounds off. <b>Your walk-up song button always works</b>, either way.</p><div class="btn2"><button class="pill gold" data-close>${I.snd} Sounds on</button><button class="pill" data-close>${I.music} Off — I've got music</button></div><p class="fine">Demo — your setting isn't changed.</p>`, "ask"); CFG.snd = s },
+   set: () => { sfx("clack"); buzz(15); floatAt(btn, "+5 XP") },
+   stamp: () => { const o = overlay(`<div class="demoex"><div class="ex" style="padding:18px;background:rgba(12,26,56,.95);border-radius:18px;border:1px solid var(--line)"><div class="exh"><span class="tag">B1</span><div class="nm">Trap Bar Deadlift<small>3 sets × 5</small></div></div><div class="sets" style="margin-left:0">${[1, 2, 3].map(i => `<div class="srow done"><div class="sl">Set ${i}</div><div class="tg">5<small>reps</small></div><div class="ins"><span class="f"><input value="${225 + i * 20}" readonly><span>lb</span></span></div><button class="ck">${I.check}</button></div>`).join("")}</div></div><button class="pill ghost" data-close style="margin-top:14px">Close</button></div>`, "center"); setTimeout(() => { const el = o.querySelector(".ex"); stamp(el); floatAt(el, "+15 XP", "gold") }, 350) },
+   rest: () => { const o = overlay(`<div class="demorest"><p class="lead" style="text-align:center">This bar slides up after every set you check.</p><div id="rest"></div><button class="pill ghost" data-close>Close</button></div>`, "center", () => stopRest()); startRest(20, "Rest") },
+   hold: () => hold(10, null), plates: () => plates(), walk: () => playWalkup(btn),
+   pr: () => showPR("Trap Bar Deadlift", 315, 295), lights: () => lightsOn(D), capsule: () => openCapsule("demo", 1 + Math.floor(Math.random() * 6)), capleg: () => openCapsule("demo", REWARDS.findIndex(x => x.r === "l")),
+   level: () => levelUp("All-Conference"), phase: () => phaseCine(findToday().p), card: () => cardPreview(),
+   sharepr: () => shareImage("pr", { name: "Trap Bar Deadlift", w: 315, prev: 295 }), shareday: () => shareImage("day", D),
+   excuse: () => { const o = sheet("Can't lift today?", `<p class="lead">Pick a reason. Your streak stays safe and your coach sees it.</p><div class="excs">${[["Game", "⚾"], ["Travel", "🚌"], ["Sick", "🤒"], ["Hurt · rehab day", "🩹"]].map(([n, e]) => `<button class="excb" data-close><i>${e}</i>${n}</button>`).join("")}</div><p class="fine">Demo — nothing is marked.</p>`) },
+   install: () => installSheet(), confetti: () => { confetti(120); sfx("pop") } };
+  (fx[k] || (() => { }))() }
+
 /* ===================== card tilt ===================== */
 function bindCards() { $$("[data-tilt]").forEach(c => { if (c._t) return; c._t = 1; const mv = (x, y) => { const r = c.getBoundingClientRect(), px = (x - r.left) / r.width, py = (y - r.top) / r.height;
   c.style.setProperty("--rx", ((.5 - py) * 16).toFixed(1) + "deg"); c.style.setProperty("--ry", ((px - .5) * 18).toFixed(1) + "deg"); c.style.setProperty("--gx", (px * 100).toFixed(0) + "%"); c.style.setProperty("--gy", (py * 100).toFixed(0) + "%") };
@@ -347,6 +393,8 @@ function bindCards() { $$("[data-tilt]").forEach(c => { if (c._t) return; c._t =
 document.addEventListener("submit", e => { if (e.target.matches("[data-profile]")) { e.preventDefault(); saveProfile(e.target) } });
 document.addEventListener("click", e => { const t = e.target.closest("button,[data-nav],[data-wk],[data-mph],[data-cap],[data-opencap],a,label,u"); if (!t) return; const D = t.dataset;
   if (D.nav) { if (D.nav !== view || !t.closest("#nav")) go(D.nav); return }
+  if (D.radd && RT) { RT.end += +D.radd * 1000; RT.tot = Math.max(RT.tot, Math.ceil((RT.end - Date.now()) / 1000)); RT.rang = 0; drawRest(); return } if ("rskip" in D) { stopRest(); return }
+  if (D.demo) { demo(D.demo, t); return } if ("tsnd" in D) { DEMO_SND = !DEMO_SND; render(); return } if ("tour" in D) { go("tour"); return }
   if ("pvon" in D) { CFG.pview = true; if (!CFG.me) CFG.me = { fn: "Player", ln: "Preview", num: "00", cls: "Fr", pos: "Position", u: "preview", preview: 1 }; saveNow(); $$(".ov").forEach(o => closeOv(o)); view = "today"; render(); scrollTo(0, 0); return }
   if ("pvoff" in D) { CFG.pview = false; if (CFG.me && CFG.me.preview) CFG.me = null; saveNow(); view = "coach"; render(); scrollTo(0, 0); return }
   if ("clogin" in D) { coachLoginSheet(); return } if ("cout" in D) { coachOut(); return } if ("creload" in D) { coachLoad(true); return }

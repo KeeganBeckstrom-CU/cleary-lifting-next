@@ -23,7 +23,8 @@ const SFX = {
   lights() { [0, .25, .5, .75].forEach(t => noise(.12, .55, 900, 300)); tone(55, 1.4, "sine", .25, .1) },
   open() { noise(.9, .3, 300, 4000, .5); [784, 988, 1175, 1568].forEach((f, i) => tone(f, .4, "sine", .1, .6 + i * .09)) }
 };
-function sfx(name) { if (CFG.snd === true && SFX[name]) try { SFX[name]() } catch (e) { } }
+let DEMO_SND = true, IN_TOUR = false;
+function sfx(name) { if ((CFG.snd === true || (IN_TOUR && DEMO_SND)) && SFX[name]) try { SFX[name]() } catch (e) { } }
 function buzz(p) { if (CFG.snd !== false && navigator.vibrate) try { navigator.vibrate(p || 18) } catch (e) { } }
 
 /* ---------- toasts + floating XP ---------- */
