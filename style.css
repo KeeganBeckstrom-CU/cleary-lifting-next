@@ -355,3 +355,7 @@ details summary{cursor:pointer;color:var(--sky);font-weight:700;font-size:13px;m
 .pvcall{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:linear-gradient(90deg,rgba(243,195,74,.16),rgba(58,120,194,.14));border:1px solid rgba(243,195,74,.45);border-radius:16px;padding:12px 14px}
 .pvcall>svg{width:22px;height:22px;color:var(--gold);flex:none}.pvcall span{flex:1}.pvcall b{display:block;font:800 17px var(--hd);text-transform:uppercase}.pvcall small{color:var(--mute);font-size:12px}.pvcall>svg:last-child{width:18px;color:var(--dim)}
 .cme{flex-wrap:wrap}
+/* iPhone: nothing from the page behind can peek under the workout screen */
+.woopen #nav,.woopen .pvbar{display:none!important}
+.woopen #main{visibility:hidden}
+#wo{box-shadow:0 300px 0 300px var(--bg)}
