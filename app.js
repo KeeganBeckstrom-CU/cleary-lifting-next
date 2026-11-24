@@ -26,9 +26,9 @@ function render() { MEMO = {}; const m = $("#main"); if (!CFG.me && !isCoach()) 
     `<button class="${view === k ? "on" : ""}" data-nav="${k}">${ic}<span>${l}</span>${k === "trophies" && unopened().length ? `<i class="dot">${unopened().length}</i>` : ""}</button>`).join("");
   $("#nav").style.setProperty("--n", tabs.length); $("#nav").style.setProperty("--i", Math.max(0, tabs.findIndex(t => t[0] === view)));
   $("#nav").classList.toggle("noact", !tabs.some(t => t[0] === view));
-  m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML, tour: tourHTML }[view] || todayHTML)();
+  m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML, tour: tourHTML, nutrition: nutritionHTML }[view] || todayHTML)();
   if (pv) m.innerHTML = `<div class="pvbar"><span>${I.me} Player view</span><button data-pvoff>Back to coach</button></div>` + m.innerHTML;
-  IN_TOUR = view === "tour"; m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); if (view === "coach") coachLoad(); bindCards() }
+  IN_TOUR = view === "tour"; m.className = "v-" + view; if (view === "season") requestAnimationFrame(seasonInit); if (view === "coach") coachLoad(); bindCards() }
 function go(v) { view = v; render(); scrollTo(0, 0) }
 
 /* ===================== welcome / profile ===================== */
@@ -55,7 +55,7 @@ function todayHTML() { const T = curT(), Q = PH[T.p], pct = dayPct(T.p, T.w, T.d
   const btn = skip ? "" : done ? `<button class="skew white" data-start>✓ Done · view</button>` : exc ? `<button class="skew ghostb" data-unexc>Excused · ${esc(exc.why)} · undo</button>` : `<button class="skew white" data-start>${started ? "Keep going" : "Start workout"}</button>`;
   const ring = `<div class="ring" style="--p:${Math.round((pct || 0) * 100)}"><b>${Math.round((pct || 0) * 100)}%</b><small>done</small></div>`;
   let h = `<section class="hero"><div class="hscene">${heroSVG(zoneOf(T.p).kind)}</div><div class="hshade"></div><div class="hin">
-   <div class="trow"><span></span><div class="hchips"><span class="chip fl" title="Lift-day streak">${I.flame}<b>${st.cur}</b></span><span class="chip lv">${esc(xp.name)}</span></div></div>
+   <div class="trow"><span></span><div class="hchips"><span class="chip fl" title="Lift-day streak">${I.flame}<b>${st.cur}</b></span><button class="chip lv" data-levels>${esc(xp.name)} ›</button></div></div>
    <div class="kick">Week ${Q.weeks[T.w].n} · Phase ${Q.n} · ${esc(Q.short)}</div><h1 class="${lab.length > 7 ? "long" : ""}">${esc(lab)}</h1>
    <div class="hsub">${dt ? (/^day/i.test(lab) ? DOW[dt.getDay()] + ", " : "") + nice(dt) : "This week · any day you choose"}${T.pre ? " · season hasn't started" : ""}</div>
    <div class="hgo">${btn}${skip ? "" : ring}</div></div></section><div class="body">`;
@@ -65,13 +65,16 @@ function todayHTML() { const T = curT(), Q = PH[T.p], pct = dayPct(T.p, T.w, T.d
   if (!skip && !done && !exc) h += `<button class="linkb" data-excuse>Can't lift today? Game, travel, sick or hurt →</button>`;
   const xpPct = xp.next ? (xp.xp - xp.base) / (xp.next - xp.base) : 1;
   h += `<div class="tiles"><div class="tile flame"><span>${I.flame}</span><b>${st.cur}</b><small>lift-day streak · best ${st.best}</small></div>
-    <div class="tile"><b class="sm">${esc(xp.name)}</b><div class="xpbar"><i style="width:${Math.round(xpPct * 100)}%"></i></div><small>${fmt(xp.xp)} XP${xp.next ? " · " + fmt(xp.next - xp.xp) + " to " + esc(xp.nextName) : ""}</small></div></div>`;
+    <button class="tile lvt" data-levels><b class="sm">${esc(xp.name)} <i class="tap">›</i></b><div class="xpbar"><i style="width:${Math.round(xpPct * 100)}%"></i></div><small>${fmt(xp.xp)} XP${xp.next ? " · " + fmt(xp.next - xp.xp) + " to " + esc(xp.nextName) : ""}</small></button></div>`;
+  h += quickRow();
   if (caps.length) h += `<button class="capcall" data-opencap="${caps[0]}"><div class="mcap"></div><div><b>${caps.length} capsule${caps.length > 1 ? "s" : ""} ready</b><small>You finished a full week. Tap to open.</small></div>${I.fwd}</button>`;
   h += pulseCard(true);
   h += `<div class="card why"><b>Phase ${Q.n} · ${esc(Q.name)}</b><p>${esc(Q.purpose)}</p></div>`;
   h += installCard();
   h += `<div class="sec-h"><h2>Team feed</h2><button class="linkb sm" data-nav="team">All →</button></div>` + feedHTML(3);
   return h + `</div>` }
+function quickBtns() { const P = CFG.playlist; return `<button class="qb" data-music><i>${I.music}</i><b>Music</b><small>${P ? "Walk-up · " + esc(P.name || svcOf(P.url)[0]) : CFG.walk ? "Walk-up song · add playlist" : "Walk-up + playlist"}</small></button><button class="qb nut" data-nav="nutrition"><i>🍽️</i><b>Nutrition</b><small>${(() => { const t = new Date(), r = LOG[nkey({ y: t.getFullYear(), m: t.getMonth() })], v = r && r.d && r.d[t.getDate()]; return v && ncal(v) ? fmt(ncal(v)) + " cal today" : (t.getDate() - 1) % 5 === 0 ? "Weigh-in day" : "Log today's macros" })()}</small></button>` }
+function quickRow() { return `<div class="qrow">${quickBtns()}</div>` }
 function weekChips(T) { const Q = PH[T.p]; return `<div class="wchips">${Q.days.map(D => { const sk = skipMsg(T.p, T.w, D.k), dn = isDone(T.p, T.w, D.k), ex = isExc(T.p, T.w, D.k), dt = dayDate(T.p, T.w, D.k), pc = dayPct(T.p, T.w, D.k);
   return `<button class="wchip ${D.k === T.d ? "on" : ""} ${dn ? "dn" : ""} ${ex ? "ex" : ""} ${sk ? "sk" : ""}" data-sel="${T.p}.${T.w}.${D.k}"><b>${esc(D.s)}</b><small>${sk ? "off" : dn ? "✓ done" : ex ? "excused" : pc ? Math.round(pc * 100) + "%" : dt ? (dt.getMonth() + 1) + "/" + dt.getDate() : "—"}</small></button>` }).join("")}</div>` }
 function pulseCard(mini) { const rows = teamRows(), n = rows.length, td = rows.filter(r => r.todayDone).length, T = findToday(), need = PH[T.p].days.length;
@@ -104,7 +107,7 @@ function woRender(keepScroll) { const { p, w, d } = WO, Q = PH[p], S = steps(p, 
   const seg = S.map((s, i) => { const dn = s.k === "warm" ? (peek(p, w, d) && Object.keys((peek(p, w, d) || {}).u || {}).length >= (Q.warm[d] || []).length) : s.k === "blk" ? blockDone(p, w, d, s.bi) : false;
     return `<button class="sg ${i === WO.i ? "on" : ""} ${dn ? "dn" : ""}" data-step="${i}" aria-label="Step ${i + 1}">${s.k === "blk" ? LET[s.bi] : s.k === "warm" ? "W" : s.k === "soft" ? "R" : "✓"}</button>` }).join("");
   const head = `<div class="woh"><button class="ib" data-woclose aria-label="Close">${I.x}</button><div class="wot"><small>Wk ${Q.weeks[w].n} · ${esc(Q.short)}</small><b>${esc(dayLabel(p, d))}</b></div>
-   <button class="ib walkbtn ${WALK && !WALK.paused ? "on" : ""}" data-walk aria-label="Walk-up song">${I.music}</button><button class="ib" data-sndtog aria-label="Sounds">${CFG.snd ? I.snd : I.mute}</button><button class="ib ${WO.list ? "on" : ""}" data-wolist aria-label="Show all">${I.list}</button></div>
+   <button class="ib walkbtn ${WALK && !WALK.paused ? "on" : ""}" data-music aria-label="Music">${I.music}</button><button class="ib" data-sndtog aria-label="Sounds">${CFG.snd ? I.snd : I.mute}</button><button class="ib ${WO.list ? "on" : ""}" data-wolist aria-label="Show all">${I.list}</button></div>
    <div class="segs">${seg}</div>${gh ? `<div class="ghost"><div class="gbar"><i style="width:${clamp(cur.lb / gh.lb * 100, 0, 100)}%"></i><span class="gm" style="left:100%"></span></div><small><b>${fmt(cur.lb)}</b> lb vs your ghost from last week <b>${fmt(gh.lb)}</b>${cur.lb > gh.lb ? " · <em>ahead</em>" : ""}</small></div>` : `<div class="ghost"><div class="gbar"><i style="width:${Math.round(pct * 100)}%"></i></div><small><b>${Math.round(pct * 100)}%</b> of today done</small></div>`}`;
   let body = WO.list ? S.map((s, i) => stepHTML(s, i)).join("") : stepHTML(S[WO.i], WO.i);
   const last = WO.i >= S.length - 1;
@@ -195,10 +198,6 @@ function hold(sec, k) { let left = sec || 0, up = !sec; const t0 = Date.now(); c
   o.querySelector("#hstop").onclick = () => fin(up ? Math.floor((Date.now() - t0) / 1000) : sec); o.addEventListener("click", e => { if (e.target.closest("[data-close]")) clearInterval(iv) }) }
 
 /* ===================== SEASON MAP ===================== */
-function seasonHTML() { const T = findToday(), L = mapLayout(), tot = L.pts.length, cur = L.pts.findIndex(q => q.p === T.p && q.w === T.w), inS = pd(PH[6].weeks[0].mon), dleft = Math.ceil((inS - today0()) / 864e5);
-  const doneW = L.pts.filter(q => { const s = weekState(q.p, q.w); return s.full && s.real > 0 }).length;
-  return `<div class="maphud"><div><small>The road to the season</small><b>Week ${PH[T.p].weeks[T.w].n} of ${tot}</b></div><div class="mh2"><div class="mbar"><i style="width:${Math.round((cur + 1) / tot * 100)}%"></i></div>
-   <small>${doneW} full weeks · ${dleft > 0 ? dleft + " days to In-Season (" + nice(inS) + ")" : "In-Season"}</small></div></div><div id="mapscroll">${mapHTML()}</div>` }
 function weekSheet(p, w) { const Q = PH[p], W = Q.weeks[w], s = weekState(p, w), key = Q.id + "-w" + (w + 1);
   const body = `<p class="lead">Phase ${Q.n} · ${esc(Q.name)} · starts ${nice(pd(W.mon))}</p>${Q.days.map(D => { const sk = skipMsg(p, w, D.k), dn = isDone(p, w, D.k), ex = isExc(p, w, D.k), pc = dayPct(p, w, D.k);
     return `<button class="drow ${dn ? "dn" : ""}" data-sel="${p}.${w}.${D.k}" ${sk ? "disabled" : ""}><b>${esc(D.l)}</b><span>${sk ? "No workout" : dn ? "✓ Done" : ex ? "Excused" : pc ? Math.round(pc * 100) + "%" : "Not started"}</span>${I.fwd}</button>` }).join("")}
@@ -227,9 +226,9 @@ function teamHTML() { const rows = teamRows(), goal = 25000000, vol = rows.reduc
   return topbar("Team", "Cleary Baseball · " + rows.length + " players") + `<div class="body">${pulseCard()}
    <div class="card goal"><div class="gh"><b>Team goal</b><small>25 million pounds as a team before the season ends</small></div><div class="gm"><div class="gfill" style="width:${clamp(vol / goal * 100, 0, 100).toFixed(1)}%"></div>${[.25, .5, .75].map(x => `<i style="left:${x * 100}%" class="${vol / goal >= x ? "hit" : ""}"></i>`).join("")}</div><div class="gn"><b>${fmt(vol)}</b> lb<span>${Math.round(vol / goal * 100)}%</span></div></div>
    <div class="sec-h"><h2>Leaderboards</h2></div><div class="seg">${[["streak", "Streak"], ["comp", "Completion"], ["gain", "Most improved"]].map(([k, l]) => `<button class="${BOARD === k ? "on" : ""}" data-board="${k}">${l}</button>`).join("")}</div>
-   <div class="board">${list.slice(0, 10).map((r, i) => `<div class="br ${r.me ? "me" : ""}"><span class="bi">${i + 1}</span><b>${esc(r.name)}</b><small>${r.pos === "Pitcher" ? "P" : "POS"} · ${esc(r.cls)}</small><em>${B[2](B[1](r))}</em></div>`).join("")}
+   <div class="board">${list.slice(0, 10).map((r, i) => `<button class="br ${r.me ? "me" : ""}" data-tcard="${r.id}"><span class="bi">${i + 1}</span><b>${esc(r.name)}</b><small>${r.pos === "Pitcher" ? "P" : "POS"} · ${esc(r.cls)}</small><em>${B[2](B[1](r))}</em><i class="cv">›</i></button>`).join("")}
    ${myI >= 10 ? `<div class="br me"><span class="bi">${myI + 1}</span><b>${esc(myName())}</b><small>you</small><em>${B[2](B[1](list[myI]))}</em></div>` : ""}${!CFG.share.boards ? `<p class="fine">You're hidden from leaderboards (Me → Privacy).</p>` : ""}</div>
-   <p class="fine">Most improved compares you to your own starting numbers, so everyone can win it.</p>
+   <p class="fine">Most improved compares you to your own starting numbers, so everyone can win it. Tap anyone to see their effort card.</p>
    <div class="sec-h"><h2>Feed</h2></div>${feedHTML(30)}<p class="fine sample">Sample team for now. Real teammates show up here once accounts are connected.</p></div>` }
 function topbar(t, s) { return `<header class="tbar"><div class="tbs">${sceneSVG(zoneOf(findToday().p).kind)}</div><div class="tbi">${miniCrest(54)}<div><b>${esc(t)}</b><small>${esc(s || "")}</small></div></div></header>` }
 
@@ -242,8 +241,8 @@ function trophiesHTML() { const caps = unopened(), prs = prEvents(), H = hofReco
    <div class="card vault"><div class="shelf">${caps.length ? caps.slice(0, 5).map((k, i) => `<button class="minicap" style="--i:${i}" data-opencap="${k}" aria-label="Open capsule"></button>`).join("") : `<div class="vempty">No capsules waiting</div>`}</div>
     <b>${caps.length} capsule${caps.length === 1 ? "" : "s"} ready</b><small>Finish every workout in a week to earn one. Rewards are cosmetic: frames, titles, badges.</small></div>
    ${owned.length ? `<div class="sec-h"><h2>Collection</h2><small>${owned.length}/${REWARDS.length}</small></div><div class="coll">${owned.map(x => `<button class="cl r-${x.r} ${CFG.frame === x.id || CFG.title === x.id || CFG.badge === x.id ? "eq" : ""}" data-equip="${x.id}"><i>${x.k === "frame" ? "▣" : x.k === "title" ? "❝" : "✦"}</i><b>${esc(x.n)}</b><small>${CFG.frame === x.id || CFG.title === x.id || CFG.badge === x.id ? "Equipped" : "Tap to equip"}</small></button>`).join("")}</div>` : ""}
-   <div class="hof"><div class="dome"><div class="arch"></div><h2>Cleary Hall of Fame</h2><p>Weight room records · they carry over year to year</p></div>
-    <div class="plaques">${Object.values(H).map(x => `<div class="plq ${x.best ? "" : "empty"}"><small>${esc(x.name)}</small>${x.best ? `<b>${x.best.w} <i>lb</i></b><span>${esc(myName())} · ${nice(x.best.dt)}</span>${x.best.check ? `<em>Pending coach check</em>` : ""}` : `<b class="q">—</b><span>Unclaimed · be the first</span>`}</div>`).join("")}</div>
+   <div class="hof"><div class="dome"><div class="hcrest">${miniCrest(110)}</div><div class="hban"><img src="img/cu.png" alt=""><h2>Hall of Fame</h2><img src="img/cu.png" alt=""></div><p>Cleary Cougars weight room records · they carry over year to year</p></div>
+    <div class="plaques">${Object.values(H).map(x => `<div class="plq ${x.best ? "" : "empty"}"><img class="plg" src="img/badge.png" alt=""><small>${esc(x.name)}</small>${x.best ? `<b>${x.best.w} <i>lb</i></b><span>${esc(myName())} · ${nice(x.best.dt)}</span>${x.best.check ? `<em>Pending coach check</em>` : ""}` : `<b class="q">—</b><span>Unclaimed · be the first</span>`}</div>`).join("")}</div>
     <p class="fine">Big jumps (20%+ over a previous best) show as "pending coach check" before they go on the wall.</p></div>
    <div class="sec-h"><h2>Phase trophies</h2><small>${PH.filter((_, p) => phaseWon(p)).length} of ${PH.length}</small></div><div class="shelf2">${PH.map((Q, p) => { const s = phaseSessions(p), won = phaseWon(p); return `<button class="tro ${won ? "won" : ""}" data-mph="${p}">${I.cup}<b>${Q.n}</b><i style="height:${s.tot ? s.done / s.tot * 100 : 0}%"></i></button>` }).join("")}</div>
    <div class="sec-h"><h2>Milestones</h2></div><div class="mils">${mil.map(([n, ok]) => `<div class="mil ${ok ? "ok" : ""}"><i>${ok ? "★" : "☆"}</i><span>${esc(n)}</span></div>`).join("")}</div>
@@ -254,17 +253,18 @@ function cardData(ed) { const c = cardRatings(ed), M = CFG.me || {}; return Obje
 function cardHTML(d, preview) { const fr = CFG.frame ? CFG.frame.replace("f-", "") : "";
   return `<div class="pcard r-${d.rar[1]} fr-${fr} ${preview ? "prev" : ""}" data-tilt><div class="pcin"><div class="pctop"><div class="ovr"><b>${d.ovr}</b><small>OVR</small></div><div class="rar">${esc(d.rar[0])}</div></div>
    <div class="pcph">${d.photo ? `<img src="${esc(d.photo)}" alt="">` : `<img class="lg" src="img/badge.png" alt="">`}</div><div class="pcn">${esc(d.name)}</div><div class="pcs">${esc(d.sub)}</div>${d.title ? `<div class="pct">${esc(d.title)}</div>` : ""}
-   <div class="pcr">${Object.entries(d.R).map(([k, v]) => `<div><b>${v}</b><small>${k === "MOBILITY" ? "MOB" : k === "ENGINE" ? "ENG" : k}</small></div>`).join("")}</div><div class="pce">${esc(d.ed)}</div></div><div class="shine"></div><div class="glare"></div>${preview ? `<div class="pvw">PREVIEW</div>` : ""}</div>` }
-const HOWCARD = [["STR · Strength", "Your best top set on each main lift (the ones with warm-up/build-up sets) compared to your first logged number. Grows as you get stronger than <b>you</b> were — not compared to anyone else, and bodyweight is never used."],
-  ["PWR · Power", "How many of your jumps, sprints, throws and slams you've completed."], ["ENG · Engine", "Conditioning: bike, row, carries and the AMRAP clocks you've finished."],
-  ["MOB · Mobility", "How much of each warm-up you check off."], ["GRIND · Consistency", "Workouts finished out of workouts due (excused days count), plus a streak bonus."]];
-function cardPreview() { const d = cardData(); sheet("Player card", `<div class="cprev">${cardHTML(d, true)}</div>
-   <p class="lead">This is what <b>your</b> card would show right now, built only from your own logs. It's off until you turn it on, and only you decide if it's shared.</p>
+   <div class="pcr">${RORD.map(([k, ab]) => `<div><b>${d.R[k]}</b><small>${ab}</small></div>`).join("")}</div><div class="pceff">EFFORT · IMPROVEMENT</div><div class="pce">${esc(d.ed)}</div></div><div class="shine"></div><div class="glare"></div>${preview ? `<div class="pvw">PREVIEW</div>` : ""}</div>` }
+const HOWCARD = [["CON · Consistency", "Workouts finished out of workouts due (excused days count), plus a streak bonus. This is the biggest piece."],
+  ["IMP · Improvement", "How much you've beaten <b>your own</b> first numbers on the main lifts. A guy who goes 95 → 135 rates higher than a guy who goes 315 → 325. Never compared to anyone else."],
+  ["PWR · Power work", "How many of your jumps, sprints, throws and slams you actually completed."], ["CND · Conditioning", "Bike, row, carries and the AMRAP clocks you finished."],
+  ["WRM · Warm-ups", "How much of each warm-up you check off."]];
+function cardPreview() { const d = cardData(); sheet("Effort card", `<div class="cprev">${cardHTML(d)}</div>
+   <div class="effnote big">${I.flame}<span><b>Effort card.</b> Built from showing up, finishing the work and beating your own numbers. <b>Total weight lifted never counts</b> — the strongest guy on the team doesn't automatically have the best card.</span></div>
    <div class="how">${HOWCARD.map(([a, b]) => `<div><b>${a}</b><p>${b}</p></div>`).join("")}</div>
    <div class="how2"><b>How it tracks through the phases</b><p>Every rating is 50–99. Your OVR is the average. Rarity climbs with it: <b>Base</b> → <b>Rare</b> (70+) → <b>Foil</b> (80+) → <b>Cougar Legend</b> (90+).</p>
    <p>When you finish a phase, that card is saved as an <b>edition</b> (Fall Ball, Big Gain, Max Strength…) so you end up with a binder of your whole season.</p>
     <div class="binder">${PH.map((Q, p) => `<div class="bslot ${p < findToday().p ? "past" : p === findToday().p ? "cur" : ""}"><b>${Q.n}</b><small>${esc(Q.short)}</small></div>`).join("")}</div></div>
-   <button class="skew red" data-cardon>${CFG.card ? "Card is on" : "Turn on my card"}</button>`, "tall") }
+   <button class="pill gold wide" data-close>Got it</button>`, "tall") }
 function editions() { const T = findToday(); sheet("Your editions", `<div class="eds">${PH.map((Q, p) => { const unlocked = phaseWon(p) || p < T.p, d = unlocked ? cardData(p) : null;
   return `<div class="ed ${unlocked ? "" : "lock"}">${unlocked ? cardHTML(d) : `<div class="edl">${I.lock}<b>${esc(Q.short)}</b><small>Phase ${Q.n}</small></div>`}</div>` }).join("")}</div><p class="fine">An edition locks in when its phase ends.</p>`, "tall") }
 function meHTML() { if (!CFG.me) return topbar("Me", "Coach account") + `<div class="body">${coachMeCard()}${tourCard()}<div class="card setc"><button class="setsw" data-mkplayer><span><b>Also lift with the team?</b><small>Set up a player profile on this phone</small></span>${I.fwd}</button><button class="setsw" data-key><span><b>Abbreviations &amp; RPE guide</b><small>What RFE, SA, ECC… mean</small></span>${I.fwd}</button></div></div>`;
@@ -274,9 +274,8 @@ function meHTML() { if (!CFG.me) return topbar("Me", "Coach account") + `<div cl
    <div class="card lvl"><div class="lvh"><b>${esc(xp.name)}</b><span>${fmt(xp.xp)} XP</span></div><div class="xpbar big"><i style="width:${xp.next ? Math.round((xp.xp - xp.base) / (xp.next - xp.base) * 100) : 100}%"></i></div>
     <small>${xp.next ? fmt(xp.next - xp.xp) + " XP to " + esc(xp.nextName) : "Max level"} · streak ${st.cur} (best ${st.best})</small><details><summary>Where your XP comes from</summary>${xp.parts.map(([a, b]) => `<div class="xr"><span>${a}</span><b>${fmt(b)}</b></div>`).join("")}<p class="fine">Showing up is worth the most. Finishing workouts beats lifting heavy.</p></details></div>`;
   h += tourCard();
-  h += `<div class="sec-h"><h2>Player card</h2><small>${CFG.card ? "On" : "Off · optional"}</small></div>`;
-  if (CFG.card) { const d = cardData(); h += `<div class="mycard">${cardHTML(d)}</div><div class="btn3"><button class="pill gold sm" data-sharecard>Share to story</button><button class="pill sm" data-editions>Editions</button><label class="pill sm">Photo<input type="file" accept="image/*" data-photo hidden></label></div><div class="cardlinks"><button class="linkb sm" data-cardhow>How it's tracked</button><button class="linkb sm" data-cardoff>Turn card off</button></div>` }
-  else h += `<button class="card cardoff" data-cardhow><div class="cmini">${I.lock}</div><div><b>See what your card would show</b><small>2K-style ratings from your own lifts, a new edition every phase. Totally optional.</small></div>${I.fwd}</button>`;
+  { const d = cardData(); h += `<div class="sec-h"><h2>Effort card</h2><small>Effort + improvement</small></div><div class="mycard">${cardHTML(d)}</div><div class="effnote">${I.flame}<span>Your card grows from <b>showing up and beating your own numbers</b> — never from total weight lifted.</span></div><div class="btn3"><button class="pill gold sm" data-sharecard>Share to story</button><button class="pill sm" data-editions>Editions</button><label class="pill sm">Photo<input type="file" accept="image/*" data-photo hidden></label></div><div class="cardlinks"><button class="linkb sm" data-cardhow>How every rating works →</button></div>` }
+  h += `<div class="sec-h"><h2>Fuel &amp; music</h2></div><div class="qrow">${quickBtns()}</div>`;
   h += `<div class="sec-h"><h2>My lifts</h2></div><div class="lifts">${MAIN.slice(0, 40).map(k => { const tops = []; EXIDX[k].forEach(x => PH[x.p].weeks.forEach((_, w) => { const t = topSet(x.p, w, x.d, x.bi, x.ei); if (t) tops.push({ o: ord(x.p, w, x.di), t }) })); if (!tops.length) return "";
     tops.sort((a, b) => a.o - b.o); const mx = Math.max(...tops.map(q => q.t)), mn = Math.min(...tops.map(q => q.t)); const pts = tops.map((q, i) => `${(i / (Math.max(1, tops.length - 1)) * 100).toFixed(1)},${(26 - (q.t - mn) / Math.max(1, mx - mn) * 22).toFixed(1)}`).join(" ");
     return `<div class="lift"><b>${esc(EXIDX[k][0].e.name)}</b><svg viewBox="0 0 100 30" preserveAspectRatio="none" fill="none"><polyline points="${pts}"/></svg><em>${mx}<i>lb</i></em></div>` }).join("") || `<p class="fine">Log a weight on any main lift and it shows up here with a trend line.</p>`}</div>`;
@@ -428,7 +427,8 @@ document.addEventListener("click", e => { const t = e.target.closest("button,[da
   if (D.equip) { const x = REWARDS.find(r => r.id === D.equip), slot = x.k === "frame" ? "frame" : x.k === "title" ? "title" : "badge"; CFG[slot] = CFG[slot] === x.id ? "" : x.id; saveNow(); render(); return }
   if ("cardhow" in D) { cardPreview(); return } if ("cardon" in D) { CFG.card = true; saveNow(); $$(".ov").forEach(o => closeOv(o)); render(); confetti(50); return } if ("cardoff" in D) { CFG.card = false; saveNow(); render(); return }
   if ("editions" in D) { editions(); return } if ("sharecard" in D) { shareImage("card", cardData()); return } if ("editprof" in D) { editProfile(); return }
-  if ("walksetup" in D) { walkSetup(); return } if ("key" in D) { keySheet(); return }
+  if ("walksetup" in D) { walkSetup(); return } if ("levels" in D) { levelsSheet(); return } if ("music" in D) { musicSheet(); return }
+  if (D.sfilt) { SFILT = D.sfilt; render(); seasonInit(); return } if (D.nmi) { NMI = +D.nmi; render(); return } if (D.tcard) { teamCard(D.tcard); return } if ("key" in D) { keySheet(); return }
   if (D.sw) { const k = D.sw; if (k === "snd") { CFG.snd = !(CFG.snd === true); if (CFG.snd) { ac(); sfx("pop") } } else if (k === "notif") { toggleNotif(); return } else if (k === "feed" || k === "boards") CFG.share[k] = !CFG.share[k]; else if (k === "mode") CFG.mode = CFG.mode === "list" ? "focus" : "list"; else CFG[k] = !CFG[k]; saveNow(); render(); return }
   if ("bwsave" in D) { const v = +$("[data-bwin]").value; if (v > 60 && v < 500) { CFG.bw.push({ d: ymd(new Date()), w: v }); saveNow(); toast("Weigh-in saved (coach only)"); render() } return }
   if ("reset" in D) { if (t.dataset.arm) { localStorage.removeItem(LS); localStorage.removeItem(LSC); location.reload() } else { t.dataset.arm = 1; t.textContent = "Tap again to erase everything on this phone" } return }
@@ -446,9 +446,9 @@ document.addEventListener("click", e => { const t = e.target.closest("button,[da
   if (D.hold) { const [s, k] = D.hold.split("|"); hold(+s, k); return } if (D.rest) { startRest(+D.rest); return } if (D.clock) { startRest(+D.clock, "AMRAP clock"); return }
   if (D.radd) { if (RT) { RT.end += +D.radd * 1000; RT.tot = Math.max(RT.tot, Math.ceil((RT.end - Date.now()) / 1000)); RT.rang = 0; drawRest() } return } if ("rskip" in D) { stopRest(); return }
   if ("plates" in D) { plates(); return } if ("finish" in D) { finishWorkout(); return } });
-document.addEventListener("input", e => { const t = e.target, D = t.dataset; if (!WO) return;
+document.addEventListener("input", e => { const t = e.target, D = t.dataset; if (D.nd || D.nt) { nutInput(t); return } if (!WO) return;
   if (D.w) setVal(D.w, "w", t.value.replace(/[^\d.]/g, "")); else if (D.r) setVal(D.r, "r", t.value); else if (D.note) { const r = rec(WO.p, WO.w, WO.d); r.n[D.note] = t.value; save() } else if (D.rounds) { const r = rec(WO.p, WO.w, WO.d); r.n["r" + D.rounds] = t.value; save() } });
-document.addEventListener("change", async e => { const t = e.target; if (t.matches("[data-photo]")) { const f = t.files[0]; if (!f) return; const img = await loadImg(URL.createObjectURL(f)); const c = document.createElement("canvas"), s = 420 / Math.max(img.width, img.height); c.width = img.width * s; c.height = img.height * s; c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); CFG.photo = c.toDataURL("image/jpeg", .82); saveNow(); render() } });
+document.addEventListener("change", async e => { const t = e.target; if (t.dataset.nd || t.dataset.nt) { saveNow(); return } if (t.matches("[data-photo]")) { const f = t.files[0]; if (!f) return; const img = await loadImg(URL.createObjectURL(f)); const c = document.createElement("canvas"), s = 420 / Math.max(img.width, img.height); c.width = img.width * s; c.height = img.height * s; c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); CFG.photo = c.toDataURL("image/jpeg", .82); saveNow(); render() } });
 addEventListener("visibilitychange", () => { if (!document.hidden && RT) drawRest() });
 
 /* boot */

@@ -190,7 +190,7 @@ function myRow() { const T = findToday(), due = SESS.filter(S => S.due < today0(
   return { id: "me", me: 1, name: myName(), pos: (CFG.me && CFG.me.pos) || "Position", comp: due.length ? done / due.length : 1, streak: streakInfo().cur, vol, wkDone: weekState(T.p, T.w).done,
     todayDone: isDone(T.p, T.w, T.d), bw: bw || 0, top, gain: c.gainPct, cls: (CFG.me && CFG.me.cls) || "" } }
 const myName = () => CFG.me ? (CFG.me.fn + " " + (CFG.me.ln || "").slice(0, 1) + ".").trim() : "You";
-const latestBW = () => { const b = (CFG.bw || []).slice().sort((a, b) => a.d < b.d ? 1 : -1)[0]; return b ? +b.w : 0 };
+const latestBW = () => { const all = (CFG.bw || []).concat(typeof nutWeighIns === "function" ? nutWeighIns() : []); const b = all.slice().sort((a, b) => a.d < b.d ? 1 : -1)[0]; return b ? +b.w : 0 };
 function teamRows() { const me = myRow(), T = sampleTeam().slice(); T.push(me); return T }
 function feedItems() { return memo("feed", () => { const out = [], R = rng(4242), Tm = sampleTeam(); const now = Date.now();
   const lifts = ["Trap Bar Deadlift", "Front Squat", "DB Bench Press", "RFE Split Squat", "Chin-Ups", "Landmine Press", "Hex Bar Jump"];
