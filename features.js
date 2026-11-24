@@ -114,7 +114,7 @@ function nutritionHTML() { const t = new Date(); if (NMI == null) { NMI = NMON.f
      <div class="ncal2"><b id="ncalt">${fmt(cal)}</b><small>calories</small></div>
      <div class="nin">${[["c", "Carbs", "#5AA9FF"], ["f", "Fat", "#F3C34A"], ["p", "Protein", "#E8274F"]].map(([f, l, c]) => `<label style="--c:${c}"><span>${l}</span><input inputmode="decimal" data-nd="${td}" data-nf="${f}" value="${esc(v[f] || "")}" placeholder="0"><em>g</em></label>`).join("")}
       <label class="w" style="--c:#2FB873"><span>Weight</span><input inputmode="decimal" data-nd="${td}" data-nf="w" value="${esc(v.w || "")}" placeholder="${isWi ? "lb" : "—"}"><em>lb</em></label></div>
-     <p class="fine">Calories fill in for you: protein × 4 + fat × 9 + carbs × 4.${isWi ? " Weigh in when you wake up, after the bathroom, before breakfast." : ""}</p></div>` }
+     <div class="hkrow"><button class="pill sm hkb" data-hkpull>❤️ Pull from Apple Health</button><button class="linkb sm" data-hkhow>How?</button></div><p class="fine">Calories fill in for you: protein × 4 + fat × 9 + carbs × 4.${isWi ? " Weigh in when you wake up, after the bathroom, before breakfast." : ""}</p></div>` }
   h += `<div class="mrow2">${NMON.map((x, i) => `<button class="${i === NMI ? "on" : ""}" data-nmi="${i}">${MON[x.m]}<small>${String(x.y).slice(2)}</small></button>`).join("")}</div>`;
   h += nsumHTML(M, r);
   h += `<div class="sec-h"><h2>Daily log</h2><small>grams</small></div><div class="card nlog"><div class="nlh"><span>Day</span><span>Carbs</span><span>Fat</span><span>Protein</span><span>Weight</span><span>Cals</span></div>
@@ -156,3 +156,59 @@ function nutTutorial() { CFG.nutSeen = 1; saveNow(); const steps = [
 addEventListener("scroll", () => { let b = $("#totop"); const show = scrollY > 700 && !document.body.classList.contains("woopen") && !$(".ov");
   if (!b) { b = document.createElement("button"); b.id = "totop"; b.dataset.totop = ""; b.setAttribute("aria-label", "Back to top"); b.innerHTML = "↑"; document.body.appendChild(b) }
   b.classList.toggle("on", show); document.body.classList.toggle("scrolled", show) }, { passive: true });
+
+/* ---------- readiness check (sleep, mood, energy, stress, soreness · 1–5, 5 = best) ---------- */
+const RQ = [["sl", "Sleep", "How'd you sleep?", ["Awful", "Poor", "OK", "Good", "Great"]], ["mo", "Mood", "How's your mood?", ["Rough", "Off", "OK", "Good", "Locked in"]],
+  ["en", "Energy", "Energy level?", ["Drained", "Low", "OK", "Good", "Fired up"]], ["st", "Stress", "Stress level?", ["Maxed out", "High", "Some", "Low", "None"]],
+  ["so", "Soreness", "How sore are you?", ["Very sore", "Sore", "A little", "Barely", "Fresh"]]];
+const RFACE = ["😫", "😕", "😐", "🙂", "🔥"], RCOL = ["#E8274F", "#F07A3A", "#F3C34A", "#7FD36B", "#2FB873"];
+const rkey = d => "rdy-" + ymd(d || today0());
+const rScore = r => r ? Math.round(RQ.reduce((a, [k]) => a + (+r[k] || 0), 0) / RQ.length * 10) / 10 : 0;
+const rColor = s => RCOL[clamp(Math.round(s) - 1, 0, 4)];
+let RSKIP = "";
+function needReady() { return !LOG[rkey()] && RSKIP !== ymd(today0()) && !IN_TOUR }
+function readyHistory(n) { return Object.keys(LOG).filter(k => /^rdy-\d{4}-\d{2}-\d{2}$/.test(k)).sort().slice(-(n || 999)).map(k => ({ d: k.slice(4), r: LOG[k], s: rScore(LOG[k]) })) }
+function readySummary() { return readyHistory(14).map(x => [x.d, x.s, RQ.map(([k]) => +x.r[k] || 0)]) } /* for the coach summary once player accounts sync */
+function readyMsg(s) { return s >= 4 ? ["Ready to roll", "Body and head are right. Go get it today."] : s >= 3 ? ["Good to go", "Normal day. Warm up well and listen to your body."]
+  : s >= 2 ? ["Take care of yourself", "Still show up. Warm up longer, keep the weights honest, and let Coach know if something's off."]
+  : ["Rough one", "Get through the warm-up and see how you feel. Talk to Coach before you push anything heavy."] }
+function readinessSheet(then) { const A = Object.assign({}, LOG[rkey()] || {});
+  const o = sheet("Readiness check", `<p class="lead rdlead">Five taps. Be honest — it's just for you and the coaches.</p><div id="rdq">${RQ.map(([k, l, q, labs]) => `<div class="rdrow" data-rk="${k}"><div class="rdh"><b>${l}</b><small>${q}</small></div><div class="rdbtns">${labs.map((lab, i) => `<button class="rdb ${A[k] == i + 1 ? "on" : ""}" data-rv="${i + 1}" style="--c:${RCOL[i]}"><i>${RFACE[i]}</i><span>${lab}</span></button>`).join("")}</div></div>`).join("")}</div>
+   <div id="rdres"></div><div class="btn2" id="rdbtns"><button class="pill" id="rdskip">Skip today</button><button class="pill gold" id="rdgo" disabled>Check in</button></div>`, "tall rdsheet");
+  const q = s => o.querySelector(s), upd = () => { q("#rdgo").disabled = RQ.some(([k]) => !A[k]) };
+  o.querySelector("#rdq").addEventListener("click", e => { const b = e.target.closest("[data-rv]"); if (!b) return; const row = b.closest("[data-rk]"); A[row.dataset.rk] = +b.dataset.rv;
+    row.querySelectorAll(".rdb").forEach(x => x.classList.toggle("on", x === b)); buzz(8); upd() });
+  q("#rdskip").onclick = () => { RSKIP = ymd(today0()); closeOv(o); if (then) setTimeout(then, 200) };
+  q("#rdgo").onclick = () => { A.t = Date.now(); LOG[rkey()] = A; saveNow(); const s = rScore(A), [h, m] = readyMsg(s);
+    q("#rdq").hidden = true; q(".rdlead").hidden = true;
+    q("#rdres").innerHTML = `<div class="rdscore" style="--c:${rColor(s)}"><div class="rdring"><b>${s.toFixed(1)}</b><small>of 5</small></div><h3>${h}</h3><p>${m}</p>
+      <div class="rdsubs">${RQ.map(([k, l]) => `<div><i style="background:${RCOL[A[k] - 1]}">${A[k]}</i><span>${l}</span></div>`).join("")}</div></div>`;
+    q("#rdbtns").innerHTML = then ? `<button class="pill gold wide" id="rdlets" style="grid-column:1/-1">Let's lift</button>` : `<button class="pill gold wide" data-close style="grid-column:1/-1">Done</button>`;
+    const l = q("#rdlets"); if (l) l.onclick = () => { closeOv(o); setTimeout(then, 200) }; if (view === "me" || view === "today") render() };
+  upd() }
+function readyCard() { const H = readyHistory(14), t = LOG[rkey()], ts = rScore(t);
+  const avg = k => { const L = readyHistory(7); return L.length ? Math.round(L.reduce((a, x) => a + (+x.r[k] || 0), 0) / L.length * 10) / 10 : 0 };
+  return `<div class="card rdcard"><div class="rdch"><div><b>Readiness</b><small>${t ? "Today" : "Not checked in today"}</small></div>${t ? `<div class="rdpill" style="--c:${rColor(ts)}">${ts.toFixed(1)}</div>` : `<button class="pill sm gold" data-ready>Check in</button>`}</div>
+   ${H.length > 1 ? `<svg class="rdspark" viewBox="0 0 100 34" preserveAspectRatio="none" fill="none"><line x1="0" x2="100" y1="${(32 - (3 - 1) / 4 * 30).toFixed(1)}" y2="${(32 - (3 - 1) / 4 * 30).toFixed(1)}" class="mid"/><polyline points="${H.map((x, i) => `${(i / (H.length - 1) * 100).toFixed(1)},${(32 - (x.s - 1) / 4 * 30).toFixed(1)}`).join(" ")}"/></svg><p class="fine">Last ${H.length} check-ins · line = 3.0</p>` : `<p class="fine">Check in before each workout and your trend shows up here.</p>`}
+   ${H.length ? `<div class="rdavg">${RQ.map(([k, l]) => { const v = avg(k); return `<div><b style="color:${rColor(v)}">${v ? v.toFixed(1) : "—"}</b><small>${l}</small></div>` }).join("")}</div><p class="fine">7-day averages · 5 is best</p>` : ""}</div>` }
+
+/* ---------- Apple Health macros (iPhone Shortcut → clipboard → app) ---------- */
+const HK_SHORTCUT = ""; /* paste the iCloud link of the shared Shortcut here once it's built */
+function hkParse(txt) { const m = /CUHEALTH\|(\d{4}-\d{2}-\d{2})\|([\d.]*)\|([\d.]*)\|([\d.]*)/.exec(txt || ""); if (!m) return null;
+  const r1 = v => v === "" ? "" : String(Math.round(+v)); return { d: m[1], c: r1(m[2]), f: r1(m[3]), p: r1(m[4]) } }
+function hkApply(x) { const [y, mo, dd] = x.d.split("-").map(Number), k = "nut-" + y + "-" + String(mo).padStart(2, "0"), r = LOG[k] = LOG[k] || {}; r.t = r.t || {}; r.d = r.d || {};
+  const day = r.d[dd] = r.d[dd] || {}; ["c", "f", "p"].forEach(f => { if (x[f] !== "") day[f] = x[f] }); saveNow();
+  const i = NMON.findIndex(q => q.y === y && q.m === mo - 1); if (i >= 0) NMI = i; view = "nutrition"; render();
+  toast(`Apple Health: ${fmt(ncal(day))} cal · P ${day.p || 0} · C ${day.c || 0} · F ${day.f || 0}`); confetti(30) }
+async function hkPull() { let txt = ""; try { txt = await navigator.clipboard.readText() } catch (e) { }
+  const x = hkParse(txt); if (x) { hkApply(x); return } hkSheet(true) }
+function hkSheet(failed) { const o = sheet("Apple Health", `${failed ? `<div class="note warn"><b>Nothing to pull yet</b>Run the "CU Macros" shortcut first, then come back and tap Pull again. Or paste below.</div>` : ""}
+   <p class="lead">Log food in MyFitnessPal (or any app that saves to Apple Health). One tap on the <b>CU Macros</b> shortcut copies today's carbs, fat and protein, then <b>Pull from Apple Health</b> drops them in here.</p>
+   <div class="hksteps"><div><i>1</i><span>Make sure MyFitnessPal shares nutrition with Apple Health (MyFitnessPal → More → Apps & Devices → Apple Health).</span></div>
+    <div><i>2</i><span>${HK_SHORTCUT ? `<a href="${HK_SHORTCUT}" target="_blank" rel="noopener">Add the CU Macros shortcut</a> and allow it to read Health.` : "Add the CU Macros shortcut your coach sends you, and allow it to read Health."}</span></div>
+    <div><i>3</i><span>Each night: run <b>CU Macros</b>, open this app, tap <b>Pull from Apple Health</b>.</span></div></div>
+   <textarea class="linkin" id="hkpaste" rows="2" placeholder="Or paste here: CUHEALTH|2026-11-23|300|70|180"></textarea><button class="pill gold wide" id="hkgo">Use pasted numbers</button>
+   <p class="fine">iPhone only — Apple doesn't let websites read Health directly. Android players type their numbers in.</p>`, "tall");
+  o.querySelector("#hkgo").onclick = () => { const x = hkParse(o.querySelector("#hkpaste").value); if (!x) { toast("That doesn't look like a CU Macros copy"); return } closeOv(o); hkApply(x) } }
+/* the shortcut can also open the app with ?hk=CUHEALTH|date|c|f|p (works in Safari and on desktop) */
+(function () { try { const u = new URLSearchParams(location.search), v = u.get("hk"); if (!v) return; const x = hkParse(v); history.replaceState(null, "", location.pathname); if (x) addEventListener("load", () => setTimeout(() => { if (CFG.me) hkApply(x) }, 400)) } catch (e) { } })();
