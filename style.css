@@ -398,13 +398,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;heigh
 .gymamb{position:absolute;inset:-40px;filter:blur(22px) brightness(.55) saturate(1.2);transform:scale(1.15);opacity:.9}.gymamb svg{width:100%;height:100%}
 .gymsvg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .gvig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 80% at 50% 45%,transparent 55%,rgba(0,0,0,.55) 100%),linear-gradient(180deg,rgba(0,0,0,.55) 0,transparent 13%,transparent 72%,rgba(0,0,0,.8) 100%)}
-.gpaint{font:italic 800 15px "Barlow Condensed";fill:#B30838;opacity:.55;letter-spacing:3px}
-.cupn{font:800 7px Barlow;fill:#0A1020}.cup.won .cupn{fill:#3B2604}.cup.won{animation:cupglow 3s ease-in-out infinite}@keyframes cupglow{50%{filter:brightness(1.25)}}
+.gpaint{font:italic 800 15px "Barlow Condensed","Arial Narrow",sans-serif;fill:#B30838;opacity:.55;letter-spacing:3px}
+.cupn{font:800 7px Barlow,sans-serif;fill:#0A1020}.cup.won .cupn{fill:#3B2604}.cup.won{animation:cupglow 3s ease-in-out infinite}@keyframes cupglow{50%{filter:brightness(1.25)}}
 .chalk{animation:chalk 3s linear infinite}@keyframes chalk{to{stroke-dashoffset:-18}}
 .chalkt{font:400 14px "Permanent Marker",cursive;fill:#E8EFE6}.chalkt.sm{font-size:9px;fill:#FFB3C1}
-.lnum{font:800 11px "Barlow Condensed";fill:#B30838}.plate{font:800 7px Barlow;fill:#0A1630;letter-spacing:1px}
+.lnum{font:800 11px "Barlow Condensed","Arial Narrow",sans-serif;fill:#B30838}.plate{font:800 7px Barlow,sans-serif;fill:#0A1630;letter-spacing:1px}
 .offwin{animation:offw 5s ease-in-out infinite}@keyframes offw{50%{opacity:.6}}
-.tvbig{font:800 17px "Barlow Condensed";fill:#FFE08A}.tvsm{font:800 6px Barlow;fill:#9DB0CC;letter-spacing:1px}.tvtick{font:700 5px Barlow;fill:#fff;animation:tick 9s linear infinite}@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-120px)}}
+.tvbig{font:800 17px "Barlow Condensed","Arial Narrow",sans-serif;fill:#FFE08A}.tvsm{font:800 6px Barlow;fill:#9DB0CC;letter-spacing:1px}.tvtick{font:700 5px Barlow;fill:#fff;animation:tick 9s linear infinite}@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-120px)}}
 .g-tv{clip-path:inset(0 round 4px)}
 .twk{animation:tw 3s ease-in-out infinite}.flt circle:last-child{animation:pulse 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 .flick{animation:flick2 7s steps(1) infinite}@keyframes flick2{0%,88%,92%,100%{opacity:1}89%,91%{opacity:.35}}
@@ -441,3 +441,32 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;heigh
 .sb label.pill.gold{color:#1B1203}.btn2 .pill,.wrow .pill{margin-top:0!important}.wrow .pill.gold{width:auto}
 
 #nav.noact::before{opacity:0}
+
+/* ===== first-person locker room ===== */
+.gym{background:radial-gradient(70% 50% at 50% 40%,#1A2C5E 0,#060B1A 70%),#060B1A}
+.pano{position:absolute;top:calc(50% - (var(--nav) + 10px + env(safe-area-inset-bottom)) / 2);left:50%;transform:translate(-50%,-50%);height:calc(100% - var(--nav) - 10px - env(safe-area-inset-bottom));aspect-ratio:390/844;max-width:100%;overflow:hidden;touch-action:pan-y;cursor:grab;box-shadow:0 0 80px rgba(0,0,0,.6)}
+.pano:active{cursor:grabbing}
+.strip{display:flex;width:500%;height:100%;will-change:transform}
+.wallbox{position:relative;flex:none;width:20%;height:100%}.wall{position:absolute;inset:0;width:100%;height:100%;display:block}
+.pano.enter{animation:enter 1.8s cubic-bezier(.25,.6,.3,1) both}
+@keyframes enter{0%{transform:translate(-50%,-50%) scale(1.55);filter:blur(8px) brightness(.35)}35%{transform:translate(-50%,calc(-50% + 6px)) scale(1.32);filter:blur(3px) brightness(.7)}65%{transform:translate(-50%,calc(-50% - 4px)) scale(1.12);filter:none}100%{transform:translate(-50%,-50%) scale(1)}}
+.pano.walk{animation:walkup .64s cubic-bezier(.55,0,.8,.4) forwards}
+@keyframes walkup{0%{transform:translate(-50%,-50%) scale(1)}35%{transform:translate(-50%,calc(-50% + 5px)) scale(1.35)}70%{transform:translate(-50%,calc(-50% - 4px)) scale(2)}100%{transform:translate(-50%,-50%) scale(3);filter:blur(4px) brightness(1.6);opacity:.15}}
+.compass{position:absolute;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top));z-index:6;display:flex;align-items:center;gap:6px;padding:5px;border-radius:24px;background:rgba(9,17,38,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(160,190,240,.16);transition:opacity .3s}
+.turn{width:38px;height:38px;border-radius:19px;background:rgba(255,255,255,.08);display:grid;place-items:center}.turn svg{width:18px;height:18px}.turn:active{background:rgba(232,39,79,.35)}
+.cwrap{min-width:118px;text-align:center}.cwrap b{display:block;font:italic 800 15px var(--hd);text-transform:uppercase;letter-spacing:.5px}.cdots{display:flex;gap:5px;justify-content:center;margin-top:3px}.cdots i{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.25);transition:all .25s}.cdots i.on{width:16px;background:var(--hot)}
+.swipehint{margin-top:22px;font-size:34px;animation:swipe 1.6s ease-in-out .9s 2 both}@keyframes swipe{0%,100%{transform:translateX(0);opacity:0}20%{opacity:1}50%{transform:translateX(-60px)}80%{opacity:1;transform:translateX(40px)}}
+.ghud{transition:opacity .3s}
+/* cartoon text in the room */
+.ban{font:italic 800 26px "Barlow Condensed","Arial Narrow",sans-serif;fill:#fff;letter-spacing:4px;paint-order:stroke;stroke:#0B1020;stroke-width:3px}
+.wtxt{font:italic 800 17px "Barlow Condensed","Arial Narrow",sans-serif;fill:#F3C34A;letter-spacing:3px;paint-order:stroke;stroke:#0B1020;stroke-width:4px}.wtxt.big{font-size:19px}
+.lk{font:800 15px "Barlow Condensed","Arial Narrow",sans-serif;fill:#0B1020}.jn{font:800 22px "Barlow Condensed","Arial Narrow",sans-serif;fill:#fff;paint-order:stroke;stroke:#0B1020;stroke-width:3px}.cdo{font:800 10px "Barlow Condensed","Arial Narrow",sans-serif;fill:#3B2604}
+.np{font:800 11px "Barlow Condensed","Arial Narrow",sans-serif;fill:#0B1020;letter-spacing:1.2px}.np.d{font-size:14px;fill:#B30838}
+.sign{font:italic 800 17px "Barlow Condensed","Arial Narrow",sans-serif;fill:#fff;letter-spacing:2px;paint-order:stroke;stroke:#0B1020;stroke-width:3px}
+.tvb{font:800 20px "Barlow Condensed","Arial Narrow",sans-serif;fill:#FFE08A}.tvs{font:800 7px Barlow,sans-serif;fill:#C9D6EA;letter-spacing:1px}.ch{font:400 16px "Permanent Marker",cursive;fill:#E8EFE6}
+.tn{font:800 11px Barlow,sans-serif;fill:#8EA3C8}.tn.w{fill:#3B2604}
+.note{font:800 18px Barlow,sans-serif;fill:#F3C34A;animation:note 2s ease-out infinite;animation-delay:var(--d);opacity:0}@keyframes note{0%{opacity:0;transform:translate(0,0)}25%{opacity:1}100%{opacity:0;transform:translate(10px,-30px)}}
+.sparkle{animation:sparkle 2.2s ease-in-out infinite;animation-delay:var(--d);transform-box:fill-box;transform-origin:center}@keyframes sparkle{0%,100%{opacity:0;scale:.3}50%{opacity:1;scale:1.1}}
+.lcard{animation:cupglow 2.5s ease-in-out infinite}.tlights circle:first-child{animation:pulse 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+
+.pview .compass{top:calc(104px + env(safe-area-inset-top))}

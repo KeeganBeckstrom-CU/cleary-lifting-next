@@ -409,7 +409,7 @@ document.addEventListener("submit", e => { if (e.target.matches("[data-profile]"
 document.addEventListener("click", e => { const t = e.target.closest("button,[data-nav],[data-wk],[data-mph],[data-cap],[data-opencap],a,label,u"); if (!t) return; const D = t.dataset;
   if (D.nav) { if (D.nav !== view || !t.closest("#nav")) go(D.nav); return }
   if (D.radd && RT) { RT.end += +D.radd * 1000; RT.tot = Math.max(RT.tot, Math.ceil((RT.end - Date.now()) / 1000)); RT.rang = 0; drawRest(); return } if ("rskip" in D) { stopRest(); return }
-  if (D.gym) { gymGo(D.gym, t); return }
+  if (D.gym) { gymGo(D.gym, t); return } if (D.turn) { gymTurn(+D.turn); return }
   if (D.demo) { demo(D.demo, t); return } if ("tsnd" in D) { DEMO_SND = !DEMO_SND; render(); return } if ("tour" in D) { go("tour"); return }
   if ("pvon" in D) { CFG.pview = true; if (!CFG.me) CFG.me = { fn: "Player", ln: "Preview", num: "00", cls: "Fr", pos: "Position", u: "preview", preview: 1 }; saveNow(); $$(".ov").forEach(o => closeOv(o)); view = "gym"; render(); scrollTo(0, 0); return }
   if ("pvoff" in D) { CFG.pview = false; if (CFG.me && CFG.me.preview) CFG.me = null; saveNow(); view = "coach"; render(); scrollTo(0, 0); return }
