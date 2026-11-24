@@ -1,6 +1,6 @@
 /* ============ CU LIFTING · screens ============ */
 "use strict";
-let view = "gym", SEL = null, WO = null, BOARD = "streak", RT = null;
+let view = "today", SEL = null, WO = null, BOARD = "streak", RT = null;
 const I = {
   bolt: '<svg class="ico" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>', map: '<svg class="ico" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>',
   team: '<svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M3 19c.8-3.4 3.2-5 6-5s5.2 1.6 6 5M14.5 14.6c2.8-.4 5.4 1 6.3 4.4"/></svg>',
@@ -18,17 +18,17 @@ const curT = () => SEL || findToday();
 /* ===================== shell ===================== */
 function render() { MEMO = {}; const m = $("#main"); if (!CFG.me && !isCoach()) { m.innerHTML = welcomeHTML(); $("#nav").hidden = true; return }
   const pv = isCoach() && CFG.pview; document.body.classList.toggle("pview", !!pv);
-  if (!CFG.me && ["today", "trophies", "gym"].includes(view)) view = "coach";
-  if (pv && view === "coach") view = "gym";
+  if (view === "gym") view = "today"; if (!CFG.me && ["today", "trophies"].includes(view)) view = "coach";
+  if (pv && view === "coach") view = "today";
   const tabs = isCoach() && !pv ? [["coach", "Coach", I.clip]].concat(CFG.me ? [["today", "Today", I.bolt]] : [], [["season", "Season", I.map], ["team", "Team", I.team], ["me", "Me", I.me]])
-    : [["gym", "Gym", I.gym], ["today", "Today", I.bolt], ["season", "Season", I.map], ["team", "Team", I.team], ["me", "Me", I.me]];
+    : [["today", "Today", I.bolt], ["season", "Season", I.map], ["team", "Team", I.team], ["trophies", "Trophies", I.cup], ["me", "Me", I.me]];
   $("#nav").hidden = false; $("#nav").innerHTML = tabs.map(([k, l, ic]) =>
-    `<button class="${view === k ? "on" : ""}" data-nav="${k}">${ic}<span>${l}</span>${k === "gym" && unopened().length ? `<i class="dot">${unopened().length}</i>` : ""}</button>`).join("");
+    `<button class="${view === k ? "on" : ""}" data-nav="${k}">${ic}<span>${l}</span>${k === "trophies" && unopened().length ? `<i class="dot">${unopened().length}</i>` : ""}</button>`).join("");
   $("#nav").style.setProperty("--n", tabs.length); $("#nav").style.setProperty("--i", Math.max(0, tabs.findIndex(t => t[0] === view)));
   $("#nav").classList.toggle("noact", !tabs.some(t => t[0] === view));
-  m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML, tour: tourHTML, gym: gymHTML }[view] || gymHTML)();
+  m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML, tour: tourHTML }[view] || todayHTML)();
   if (pv) m.innerHTML = `<div class="pvbar"><span>${I.me} Player view</span><button data-pvoff>Back to coach</button></div>` + m.innerHTML;
-  IN_TOUR = view === "tour"; m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); if (view === "coach") coachLoad(); if (view === "gym") gymInit(); bindCards() }
+  IN_TOUR = view === "tour"; m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); if (view === "coach") coachLoad(); bindCards() }
 function go(v) { view = v; render(); scrollTo(0, 0) }
 
 /* ===================== welcome / profile ===================== */
@@ -39,7 +39,7 @@ function welcomeHTML() { return `<div class="welcome"><div class="wscene">${scen
   <div class="seg" data-seg="pos"><button type="button" class="on" data-v="Position">Position player</button><button type="button" data-v="Pitcher">Pitcher</button></div><input type="hidden" name="pos" value="Position">
   <button class="skew big">Let's lift</button></form><button class="linkb ctr" data-clogin>Coach? Sign in here →</button></div>` }
 function saveProfile(f) { const d = Object.fromEntries(new FormData(f)); CFG.me = { fn: d.fn.trim(), ln: d.ln.trim(), num: d.num.trim(), cls: d.cls, pos: d.pos, u: nrm(d.fn + d.ln) }; saveNow();
-  const o = overlay(`<div class="hello"><small>Welcome</small><b>${esc(CFG.me.fn)}<br>${esc(CFG.me.ln)}</b><span>#${esc(CFG.me.num || "—")} · ${esc(CFG.me.pos === "Pitcher" ? "Pitcher" : "Position player")}</span></div>`, "center hellov"); setTimeout(() => { closeOv(o); view = "gym"; GYM_INTRO = false; render() }, 1700) }
+  const o = overlay(`<div class="hello"><small>Welcome</small><b>${esc(CFG.me.fn)}<br>${esc(CFG.me.ln)}</b><span>#${esc(CFG.me.num || "—")} · ${esc(CFG.me.pos === "Pitcher" ? "Pitcher" : "Position player")}</span></div>`, "center hellov"); setTimeout(() => { closeOv(o); view = "today"; render() }, 1700) }
 
 /* ===================== scenes (hero art reused from the map) ===================== */
 function zoneOf(p) { return ZONES.find(z => z.ps.includes(p)) || ZONES[0] }
@@ -139,7 +139,7 @@ function exHTML(b, bi, e, ei, W, r) { const { p, w, d } = WO, id = bi + "." + ei
   h += `<div class="sets">` + R.map((Rw, si) => { const k = id + "." + si, v = (r.s && r.s[k]) || {}, P = parseT(Rw.t, e), sg = W.wt ? suggest(p, w, d, bi, ei, si, Rw) : null, timed = P.secs || P.maxt;
     const repsPh = P.raw ? "reps" : P.maxt ? "sec" : P.secs ? P.big : P.big;
     return `<div class="srow ${v.d ? "done" : ""} ${Rw.warm ? "warm" : ""} ${Rw.opt ? "optset" : ""}" data-k="${k}"><div class="sl">${esc(Rw.warm ? "WU" : Rw.lab)}${Rw.opt ? "<i>optional</i>" : ""}</div>
-     <div class="tg">${esc(P.big)}<small>${esc(P.small)}</small></div><div class="ins">${W.wt ? `<label class="f"><input inputmode="decimal" data-w="${k}" value="${esc(v.w || "")}" placeholder="${sg ? sg.next : "lb"}"><span>lb</span></label>` : ""}
+     <div class="tg">${esc(P.big)}<small>${esc(P.small)}</small></div><div class="ins">${W.wt ? `<label class="f"><input inputmode="decimal" data-w="${k}" value="${esc(v.w || "")}" placeholder="${sg ? sg.next : ""}"><span>lb</span></label>` : ""}
      <label class="f reps"><input inputmode="numeric" data-r="${k}" value="${esc(v.r || "")}" placeholder="${esc(repsPh)}"></label>${timed ? `<button class="tbtn" data-hold="${P.secs || 0}|${k}">▶</button>` : ""}</div>
      <button class="ck" data-ck="${k}" aria-label="Done">${I.check}</button>
      ${sg && !v.d ? `<div class="sug">Last: <b>${esc(sg.last.w)}${sg.last.r ? "×" + esc(sg.last.r) : ""}</b> → try <button class="tryb" data-try="${k}|${sg.next}">${sg.next} lb</button></div>` : ""}
@@ -231,7 +231,7 @@ function teamHTML() { const rows = teamRows(), goal = 25000000, vol = rows.reduc
    ${myI >= 10 ? `<div class="br me"><span class="bi">${myI + 1}</span><b>${esc(myName())}</b><small>you</small><em>${B[2](B[1](list[myI]))}</em></div>` : ""}${!CFG.share.boards ? `<p class="fine">You're hidden from leaderboards (Me → Privacy).</p>` : ""}</div>
    <p class="fine">Most improved compares you to your own starting numbers, so everyone can win it.</p>
    <div class="sec-h"><h2>Feed</h2></div>${feedHTML(30)}<p class="fine sample">Sample team for now. Real teammates show up here once accounts are connected.</p></div>` }
-function topbar(t, s) { return `<header class="tbar">${["trophies", "tour"].includes(view) ? `<button class="tback" data-nav="gym">‹ Weight room</button>` : ""}<div class="tbs">${sceneSVG(zoneOf(findToday().p).kind)}</div><div class="tbi"><img src="img/cu.png" alt=""><div><b>${esc(t)}</b><small>${esc(s || "")}</small></div></div></header>` }
+function topbar(t, s) { return `<header class="tbar"><div class="tbs">${sceneSVG(zoneOf(findToday().p).kind)}</div><div class="tbi"><img src="img/cu.png" alt=""><div><b>${esc(t)}</b><small>${esc(s || "")}</small></div></div></header>` }
 
 /* ===================== TROPHIES / HALL OF FAME ===================== */
 function hofRecords() { const out = {}; const prs = prEvents(); MAIN.forEach(k => { let best = null; EXIDX[k].forEach(x => PH[x.p].weeks.forEach((_, w) => { const t = topSet(x.p, w, x.d, x.bi, x.ei); if (t && (!best || t > best.w)) best = { w: t, dt: sessDate(x.p, w, x.d), name: x.e.name, check: prs.some(e => nrm(e.name) === k && e.w === t && e.check) } }));
@@ -409,9 +409,8 @@ document.addEventListener("submit", e => { if (e.target.matches("[data-profile]"
 document.addEventListener("click", e => { const t = e.target.closest("button,[data-nav],[data-wk],[data-mph],[data-cap],[data-opencap],a,label,u"); if (!t) return; const D = t.dataset;
   if (D.nav) { if (D.nav !== view || !t.closest("#nav")) go(D.nav); return }
   if (D.radd && RT) { RT.end += +D.radd * 1000; RT.tot = Math.max(RT.tot, Math.ceil((RT.end - Date.now()) / 1000)); RT.rang = 0; drawRest(); return } if ("rskip" in D) { stopRest(); return }
-  if (D.gym) { gymGo(D.gym, t); return } if (D.turn) { gymTurn(+D.turn); return }
   if (D.demo) { demo(D.demo, t); return } if ("tsnd" in D) { DEMO_SND = !DEMO_SND; render(); return } if ("tour" in D) { go("tour"); return }
-  if ("pvon" in D) { CFG.pview = true; if (!CFG.me) CFG.me = { fn: "Player", ln: "Preview", num: "00", cls: "Fr", pos: "Position", u: "preview", preview: 1 }; saveNow(); $$(".ov").forEach(o => closeOv(o)); view = "gym"; render(); scrollTo(0, 0); return }
+  if ("pvon" in D) { CFG.pview = true; if (!CFG.me) CFG.me = { fn: "Player", ln: "Preview", num: "00", cls: "Fr", pos: "Position", u: "preview", preview: 1 }; saveNow(); $$(".ov").forEach(o => closeOv(o)); view = "today"; render(); scrollTo(0, 0); return }
   if ("pvoff" in D) { CFG.pview = false; if (CFG.me && CFG.me.preview) CFG.me = null; saveNow(); view = "coach"; render(); scrollTo(0, 0); return }
   if ("clogin" in D) { coachLoginSheet(); return } if ("cout" in D) { coachOut(); return } if ("creload" in D) { coachLoad(true); return }
   if (D.csort) { CSORT = D.csort; render(); return } if (D.cpos) { CPOS = D.cpos; render(); return } if (D.cp) { cPlayerSheet(D.cp); return }

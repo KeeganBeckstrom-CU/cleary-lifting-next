@@ -470,3 +470,44 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;heigh
 .lcard{animation:cupglow 2.5s ease-in-out infinite}.tlights circle:first-child{animation:pulse 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 
 .pview .compass{top:calc(104px + env(safe-area-inset-top))}
+
+/* ================= MODERN GLASS ================= */
+/* soft color glows behind everything so the glass has something to frost */
+body{background:
+  radial-gradient(60% 40% at 0% 10%,rgba(179,8,56,.32),transparent 70%),
+  radial-gradient(55% 45% at 100% 35%,rgba(58,120,194,.30),transparent 70%),
+  radial-gradient(60% 40% at 30% 100%,rgba(243,195,74,.12),transparent 70%),
+  radial-gradient(120% 60% at 50% -10%,#12224A 0,var(--bg) 60%),var(--bg);background-attachment:fixed}
+:root{--glass:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.025) 55%,rgba(255,255,255,.05));--gbor:rgba(255,255,255,.13);--gshadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(0,0,0,.25),0 10px 28px rgba(0,0,0,.32)}
+.card,.tile,.fi,.br,.lift,.wchip,.cl,.mil,.pri,.crow,.stp,.srow,.how div,.how2,.wsong,.capcall,.tourcall,.pvcall,.plq.empty,.cs4 div,.tbtn2{
+  position:relative;overflow:hidden;background:var(--glass),rgba(14,28,62,.42);border:1px solid var(--gbor);
+  backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);box-shadow:var(--gshadow)}
+.card,.stp{border-radius:22px}.tile,.fi,.br,.lift,.cl,.mil,.pri,.crow,.tbtn2{border-radius:16px}.srow{border-radius:14px}.wchip{border-radius:16px}
+/* the glimmer: a soft band of light that glides across each panel every few seconds */
+.card::after,.tile::after,.fi::after,.br::after,.lift::after,.wchip::after,.cl::after,.mil::after,.pri::after,.crow::after,.stp::after,.srow::after,.capcall::after,.tourcall::after,.pvcall::after,.cs4 div::after,.tbtn2::after{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:60%;pointer-events:none;z-index:2;
+  background:linear-gradient(105deg,transparent 0,rgba(255,255,255,.0) 20%,rgba(255,255,255,.24) 48%,rgba(190,220,255,.14) 54%,transparent 80%);
+  transform:translateX(-140%) skewX(-12deg);animation:glimmer 7.5s cubic-bezier(.4,0,.2,1) infinite;animation-delay:var(--gd,0s)}
+@keyframes glimmer{0%,62%{transform:translateX(-140%) skewX(-12deg)}86%,100%{transform:translateX(260%) skewX(-12deg)}}
+/* stagger the sweep so it ripples down the page instead of flashing all at once */
+:nth-child(2)>.card::after,.card:nth-child(2)::after,.fi:nth-child(2)::after,.br:nth-child(2)::after,.lift:nth-child(2)::after,.srow:nth-child(2)::after,.pri:nth-child(2)::after,.crow:nth-child(2)::after,.mil:nth-child(2)::after,.tile:nth-child(2)::after,.wchip:nth-child(2)::after{--gd:.35s}
+.card:nth-child(3)::after,.fi:nth-child(3)::after,.br:nth-child(3)::after,.lift:nth-child(3)::after,.srow:nth-child(3)::after,.pri:nth-child(3)::after,.crow:nth-child(3)::after,.mil:nth-child(3)::after,.wchip:nth-child(3)::after{--gd:.7s}
+.card:nth-child(4)::after,.fi:nth-child(4)::after,.br:nth-child(4)::after,.lift:nth-child(4)::after,.srow:nth-child(4)::after,.pri:nth-child(4)::after,.crow:nth-child(4)::after,.mil:nth-child(4)::after{--gd:1.05s}
+.card:nth-child(n+5)::after,.fi:nth-child(n+5)::after,.br:nth-child(n+5)::after,.lift:nth-child(n+5)::after,.srow:nth-child(n+5)::after,.pri:nth-child(n+5)::after,.crow:nth-child(n+5)::after,.mil:nth-child(n+5)::after{--gd:1.4s}
+.card>*,.tile>*,.fi>*,.br>*,.lift>*,.stp>*,.srow>*{position:relative;z-index:3}
+/* keep each panel's own accent on top of the glass */
+.srow.done{background:linear-gradient(135deg,rgba(47,184,115,.24),rgba(47,184,115,.08)),rgba(14,28,62,.4);border-color:rgba(47,184,115,.5)}
+.srow.warm{border-color:rgba(243,195,74,.22)}.srow.optset{background:transparent;border-style:dashed}
+.br.me{background:linear-gradient(135deg,rgba(232,39,79,.30),rgba(179,8,56,.10)),rgba(14,28,62,.4);border-color:rgba(232,39,79,.55)}
+.fi.me{border-color:rgba(232,39,79,.5)}.wchip.on{background:linear-gradient(135deg,rgba(232,39,79,.28),rgba(232,39,79,.06)),rgba(14,28,62,.42)}
+.capcall{background:linear-gradient(135deg,rgba(243,195,74,.22),rgba(90,169,255,.10)),rgba(14,28,62,.42);border-color:rgba(243,195,74,.5)}
+.tourcall{background:linear-gradient(135deg,rgba(179,8,56,.34),rgba(58,120,194,.14)),rgba(14,28,62,.42);border-color:rgba(232,39,79,.5)}
+.vault{background:radial-gradient(120% 80% at 50% 0,rgba(58,90,190,.45),rgba(13,20,48,.5) 70%)}.why{background:linear-gradient(135deg,rgba(0,43,92,.55),rgba(58,120,194,.18)),rgba(14,28,62,.42)}
+.stp.bdone{border-color:rgba(47,184,115,.5)}
+/* modern touches */
+.sec-h h2{font-size:20px;letter-spacing:1px}.sec-h{margin-top:10px}
+.pill{border-radius:24px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.sheet{background:linear-gradient(180deg,rgba(24,44,92,.88),rgba(10,22,48,.94));backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-color:rgba(255,255,255,.14)}
+.hero{border-radius:0 0 32px 32px;box-shadow:0 20px 50px rgba(0,0,0,.35)}.tbar{border-radius:0 0 30px 30px}
+.wob .stp{background:var(--glass),rgba(12,26,56,.55)}
+@media (prefers-reduced-motion:reduce){[class]::after{animation:none!important}}
