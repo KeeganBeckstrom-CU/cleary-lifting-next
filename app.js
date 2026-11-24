@@ -24,7 +24,8 @@ function render() { MEMO = {}; const m = $("#main"); if (!CFG.me && !isCoach()) 
     : [["gym", "Gym", I.gym], ["today", "Today", I.bolt], ["season", "Season", I.map], ["team", "Team", I.team], ["me", "Me", I.me]];
   $("#nav").hidden = false; $("#nav").innerHTML = tabs.map(([k, l, ic]) =>
     `<button class="${view === k ? "on" : ""}" data-nav="${k}">${ic}<span>${l}</span>${k === "gym" && unopened().length ? `<i class="dot">${unopened().length}</i>` : ""}</button>`).join("");
-  $("#nav").style.gridTemplateColumns = `repeat(${tabs.length},1fr)`;
+  $("#nav").style.setProperty("--n", tabs.length); $("#nav").style.setProperty("--i", Math.max(0, tabs.findIndex(t => t[0] === view)));
+  $("#nav").classList.toggle("noact", !tabs.some(t => t[0] === view));
   m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML, tour: tourHTML, gym: gymHTML }[view] || gymHTML)();
   if (pv) m.innerHTML = `<div class="pvbar"><span>${I.me} Player view</span><button data-pvoff>Back to coach</button></div>` + m.innerHTML;
   IN_TOUR = view === "tour"; m.className = "v-" + view; if (view === "season") requestAnimationFrame(mapInit); if (view === "coach") coachLoad(); if (view === "gym") gymInit(); bindCards() }
