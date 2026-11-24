@@ -53,7 +53,7 @@ function stamp(el) { if (!el) return; sfx("stamp"); buzz(40); const s = document
 /* day finish: stadium lights flicker on + scoreboard */
 function lightsOn(stats, after) { sfx("lights"); buzz([60, 80, 60]); setTimeout(() => sfx("roar"), 1300);
   const towers = [0, 1, 2, 3].map(i => `<div class="tower t${i}"><div class="bank">${"<i></i>".repeat(12)}</div><div class="pole"></div></div>`).join("");
-  const o = overlay(`<div class="stadium"><div class="beams"></div>${towers}<div class="sboard"><div class="sbh">CLEARY <span>·</span> FINAL</div>
+  const o = overlay(`<div class="stadium"><div class="beams"></div>${towers}<div class="sboard"><div class="sbcrest">${miniCrest(84)}</div><div class="sbh">CLEARY <span>·</span> FINAL</div>
     <div class="sbrow"><div><b data-count="${stats.sets}">0</b><span>Sets</span></div><div><b data-count="${Math.round(stats.lb)}">0</b><span>Pounds moved</span></div><div><b data-count="${stats.xp}">0</b><span>XP</span></div></div>
     <div class="sbrow two"><div><b>${stats.prs}</b><span>PRs</span></div><div><b>🔥 ${stats.streak}</b><span>Streak</span></div></div>
     ${stats.ghost ? `<div class="sbghost ${stats.beat ? "" : "short"}">${stats.ghost}</div>` : ""}

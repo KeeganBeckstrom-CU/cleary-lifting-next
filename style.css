@@ -511,3 +511,30 @@ body{background:
 .hero{border-radius:0 0 32px 32px;box-shadow:0 20px 50px rgba(0,0,0,.35)}.tbar{border-radius:0 0 30px 30px}
 .wob .stp{background:var(--glass),rgba(12,26,56,.55)}
 @media (prefers-reduced-motion:reduce){[class]::after{animation:none!important}}
+
+/* ===== cartoon crest + night-game hero ===== */
+.hero{min-height:min(566px,145vw);background:#040A1E}
+.hero .hgo{margin-top:min(92px,23vw)}
+.hscene svg.heroart{position:absolute;inset:0;width:100%;height:100%}
+.hshade{background:linear-gradient(180deg,rgba(4,10,30,0) 36%,rgba(4,10,30,.45) 52%,rgba(4,10,30,0) 66%,rgba(4,10,30,.15) 80%,rgba(4,10,30,.9))}
+.hero .kick{margin-top:min(186px,47vw)}
+.hero h1{font-size:clamp(50px,15vw,70px)}.hero h1.long{font-size:clamp(40px,12vw,56px)}
+.welcome .wkick{margin-top:min(296px,74vw)}.wlogo{display:none}
+.crest{animation:crestbob 4.5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes crestbob{0%,100%{translate:0 0}50%{translate:0 -6px}}
+.crays{animation:spin 30s linear infinite;transform-box:fill-box;transform-origin:center}
+.crays circle{mask:repeating-conic-gradient(#000 0 9deg,transparent 9deg 22deg)}
+.cshine{animation:cshine 6s ease-in-out infinite}@keyframes cshine{0%,55%{transform:skewX(-18) translateX(0)}80%,100%{transform:skewX(-18) translateX(300px)}}
+.crt{font:800 11px "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:2.6px;fill:#fff}.crt.b{fill:#FFE08A;font-size:10.5px}
+.minicrest .crt{font-size:7.4px;letter-spacing:1.4px}.minicrest .crt.b{font-size:7px}
+.sweep{animation:sweep 9s ease-in-out infinite alternate}.sweep.s2{animation-delay:-4.5s}@keyframes sweep{from{rotate:-14deg}to{rotate:14deg}}
+.pennant{animation:penn 1.8s ease-in-out infinite}@keyframes penn{0%,100%{transform:skewY(0)}50%{transform:skewY(-8deg) scaleX(.92)}}
+.pt{font:800 8px "Barlow Condensed",sans-serif;fill:#fff}
+.bulb{animation:twk2 2.6s ease-in-out infinite;animation-delay:var(--k)}@keyframes twk2{50%{opacity:.55}}
+.fan{animation:fan 1.4s ease-in-out infinite;animation-delay:var(--d)}@keyframes fan{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.wallt{font:italic 800 21px "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:5px;fill:#fff;paint-order:stroke;stroke:#0B1020;stroke-width:3px}
+.ball{offset-rotate:0deg;animation:ballfly 8s cubic-bezier(.4,.1,.6,.9) infinite;animation-delay:2s;opacity:0}
+@keyframes ballfly{0%{offset-distance:0%;opacity:1;rotate:0deg}22%{offset-distance:100%;opacity:1;rotate:720deg}23%,100%{offset-distance:100%;opacity:0}}
+.minicrest{flex:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+.sbcrest{display:flex;justify-content:center;margin:-56px 0 4px}
+.finale .crest{animation-duration:3s}

@@ -32,7 +32,7 @@ function render() { MEMO = {}; const m = $("#main"); if (!CFG.me && !isCoach()) 
 function go(v) { view = v; render(); scrollTo(0, 0) }
 
 /* ===================== welcome / profile ===================== */
-function welcomeHTML() { return `<div class="welcome"><div class="wscene">${sceneSVG("stadium")}</div><img class="wlogo" src="img/badge.png" alt="Cleary Cougars">
+function welcomeHTML() { return `<div class="welcome"><div class="wscene">${heroSVG("stadium", { h: 844, cy: 180, r: 104 })}</div>
   <div class="wkick">Cleary Baseball · 2026-27</div><h1>Built in<br>the dark.</h1><p class="wp">Your lifts, your streak, your season — all in one place.</p>
   <form class="wform" data-profile><div class="frow"><label>First name<input name="fn" required autocomplete="given-name"></label><label>Last name<input name="ln" required autocomplete="family-name"></label></div>
   <div class="frow"><label>Jersey #<input name="num" inputmode="numeric" maxlength="2"></label><label>Class<select name="cls"><option>Fr</option><option>So</option><option>Jr</option><option>Sr</option><option>Grad</option></select></label></div>
@@ -54,8 +54,8 @@ function todayHTML() { const T = curT(), Q = PH[T.p], pct = dayPct(T.p, T.w, T.d
   const st = streakInfo(), xp = xpInfo(), caps = unopened(), skip = skipMsg(T.p, T.w, T.d), started = pct > 0 && !done, lab = dayLabel(T.p, T.d);
   const btn = skip ? "" : done ? `<button class="skew white" data-start>✓ Done · view</button>` : exc ? `<button class="skew ghostb" data-unexc>Excused · ${esc(exc.why)} · undo</button>` : `<button class="skew white" data-start>${started ? "Keep going" : "Start workout"}</button>`;
   const ring = `<div class="ring" style="--p:${Math.round((pct || 0) * 100)}"><b>${Math.round((pct || 0) * 100)}%</b><small>done</small></div>`;
-  let h = `<section class="hero"><div class="hscene">${sceneSVG(zoneOf(T.p).kind)}</div><div class="hshade"></div><div class="hin">
-   <div class="trow"><img class="hlogo" src="img/cu.png" alt="CU"><div class="hchips"><span class="chip fl" title="Lift-day streak">${I.flame}<b>${st.cur}</b></span><span class="chip lv">${esc(xp.name)}</span></div></div>
+  let h = `<section class="hero"><div class="hscene">${heroSVG(zoneOf(T.p).kind)}</div><div class="hshade"></div><div class="hin">
+   <div class="trow"><span></span><div class="hchips"><span class="chip fl" title="Lift-day streak">${I.flame}<b>${st.cur}</b></span><span class="chip lv">${esc(xp.name)}</span></div></div>
    <div class="kick">Week ${Q.weeks[T.w].n} · Phase ${Q.n} · ${esc(Q.short)}</div><h1 class="${lab.length > 7 ? "long" : ""}">${esc(lab)}</h1>
    <div class="hsub">${dt ? (/^day/i.test(lab) ? DOW[dt.getDay()] + ", " : "") + nice(dt) : "This week · any day you choose"}${T.pre ? " · season hasn't started" : ""}</div>
    <div class="hgo">${btn}${skip ? "" : ring}</div></div></section><div class="body">`;
@@ -231,7 +231,7 @@ function teamHTML() { const rows = teamRows(), goal = 25000000, vol = rows.reduc
    ${myI >= 10 ? `<div class="br me"><span class="bi">${myI + 1}</span><b>${esc(myName())}</b><small>you</small><em>${B[2](B[1](list[myI]))}</em></div>` : ""}${!CFG.share.boards ? `<p class="fine">You're hidden from leaderboards (Me → Privacy).</p>` : ""}</div>
    <p class="fine">Most improved compares you to your own starting numbers, so everyone can win it.</p>
    <div class="sec-h"><h2>Feed</h2></div>${feedHTML(30)}<p class="fine sample">Sample team for now. Real teammates show up here once accounts are connected.</p></div>` }
-function topbar(t, s) { return `<header class="tbar"><div class="tbs">${sceneSVG(zoneOf(findToday().p).kind)}</div><div class="tbi"><img src="img/cu.png" alt=""><div><b>${esc(t)}</b><small>${esc(s || "")}</small></div></div></header>` }
+function topbar(t, s) { return `<header class="tbar"><div class="tbs">${sceneSVG(zoneOf(findToday().p).kind)}</div><div class="tbi">${miniCrest(54)}<div><b>${esc(t)}</b><small>${esc(s || "")}</small></div></div></header>` }
 
 /* ===================== TROPHIES / HALL OF FAME ===================== */
 function hofRecords() { const out = {}; const prs = prEvents(); MAIN.forEach(k => { let best = null; EXIDX[k].forEach(x => PH[x.p].weeks.forEach((_, w) => { const t = topSet(x.p, w, x.d, x.bi, x.ei); if (t && (!best || t > best.w)) best = { w: t, dt: sessDate(x.p, w, x.d), name: x.e.name, check: prs.some(e => nrm(e.name) === k && e.w === t && e.check) } }));
