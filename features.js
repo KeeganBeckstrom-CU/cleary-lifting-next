@@ -108,7 +108,7 @@ function nutritionHTML() { const t = new Date(); if (NMI == null) { NMI = NMON.f
   const M = NMON[NMI], r = nrec(M), days = new Date(M.y, M.m + 1, 0).getDate(), isCur = M.y === t.getFullYear() && M.m === t.getMonth(), td = isCur ? t.getDate() : null;
   const logged = Object.entries(r.d).filter(([, v]) => v.c || v.f || v.p), n = logged.length, avg = f => n ? Math.round(logged.reduce((a, [, v]) => a + (+v[f] || 0), 0) / n) : 0;
   const avgCal = n ? Math.round(logged.reduce((a, [, v]) => a + ncal(v), 0) / n) : 0, wi = nutWeighIns(), last = wi[wi.length - 1];
-  let h = topbar("Nutrition", "Fuel the work") + `<div class="body"><button class="linkb back" data-nav="today">‹ Back to Today</button>`;
+  let h = topbar("Nutrition", "Fuel the work") + `<div class="body"><div class="nbar"><button class="linkb back" data-nav="today">‹ Back to Today</button><button class="linkb back" data-nuthow>How it works ?</button></div>`;
   if (td) { const v = r.d[td] || {}, isWi = (td - 1) % 5 === 0, cal = ncal(v);
     h += `<div class="card ntoday"><div class="nth"><div><small>${DOW[t.getDay()]}</small><b>Today · ${nice(t)}</b></div>${isWi ? `<span class="wibadge">⚖️ Weigh-in day</span>` : ""}</div>
      <div class="ncal2"><b id="ncalt">${fmt(cal)}</b><small>calories</small></div>
@@ -137,3 +137,22 @@ function nutInput(t) { const D = t.dataset; const M = NMON[NMI]; const r = nrec(
 /* levels scaled to the real season: a player who finishes everything reaches Cougar Legend near the end, not by November */
 (function () { const P = xpPlan(), tot = P[P.length - 1].cum, at = [0, .05, .15, .33, .55, .8];
   at.forEach((f, i) => { LEVELS[i][1] = Math.round(tot * f / 100) * 100 }); MEMO = {} })();
+
+/* ---------- nutrition quick tutorial ---------- */
+function nutTutorial() { CFG.nutSeen = 1; saveNow(); const steps = [
+  ["🍳", "Eat, then log it", "Track what you eat in a free app like MyFitnessPal (or read the labels). At the end of the day, copy your carbs, fat and protein grams into the boxes at the top."],
+  ["🔥", "Calories do themselves", "You never type calories. Protein × 4 + fat × 9 + carbs × 4 adds up for you."],
+  ["⚖️", "Weigh in every 5th day", "Days with the scale (the 1st, 6th, 11th…) are weigh-in days. Step on first thing in the morning, after the bathroom, before you eat. Type it in the Weight box."],
+  ["🎯", "Set your month", "Put your starting weight and goal weight for the month. Averages and your weigh-in trend fill in as you log."],
+  ["🔒", "It's private", "Only you and the coaches see your nutrition and weigh-ins. Missed a day? Scroll to the daily log and fill it in."]];
+  let i = 0; const o = sheet("Nutrition · how it works", `<div id="nt"></div>`, "nutt");
+  const draw = () => { const [ic, t, b] = steps[i]; o.querySelector("#nt").innerHTML = `<div class="ntstep"><div class="ntic">${ic}</div><small>Step ${i + 1} of ${steps.length}</small><b>${t}</b><p>${b}</p></div>
+    <div class="ntdots">${steps.map((_, k) => `<i class="${k === i ? "on" : ""}"></i>`).join("")}</div>
+    <div class="btn2">${i ? `<button class="pill" id="ntb">Back</button>` : `<button class="pill" data-close>Skip</button>`}<button class="pill gold" id="ntn">${i === steps.length - 1 ? "Start logging" : "Next"}</button></div>`;
+    const bk = o.querySelector("#ntb"); if (bk) bk.onclick = () => { i--; draw() };
+    o.querySelector("#ntn").onclick = () => { if (i === steps.length - 1) { closeOv(o); const x = $(".nin input"); if (x) x.focus() } else { i++; draw() } } };
+  draw() }
+/* ---------- back to top (any long screen) ---------- */
+addEventListener("scroll", () => { let b = $("#totop"); const show = scrollY > 700 && !document.body.classList.contains("woopen") && !$(".ov");
+  if (!b) { b = document.createElement("button"); b.id = "totop"; b.dataset.totop = ""; b.setAttribute("aria-label", "Back to top"); b.innerHTML = "↑"; document.body.appendChild(b) }
+  b.classList.toggle("on", show); document.body.classList.toggle("scrolled", show) }, { passive: true });

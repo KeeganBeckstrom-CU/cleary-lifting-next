@@ -28,7 +28,7 @@ function render() { MEMO = {}; const m = $("#main"); if (!CFG.me && !isCoach()) 
   $("#nav").classList.toggle("noact", !tabs.some(t => t[0] === view));
   m.innerHTML = ({ today: todayHTML, season: seasonHTML, team: teamHTML, trophies: trophiesHTML, me: meHTML, coach: coachHTML, tour: tourHTML, nutrition: nutritionHTML }[view] || todayHTML)();
   if (pv) m.innerHTML = `<div class="pvbar"><span>${I.me} Player view</span><button data-pvoff>Back to coach</button></div>` + m.innerHTML;
-  IN_TOUR = view === "tour"; m.className = "v-" + view; if (view === "season") requestAnimationFrame(seasonInit); if (view === "coach") coachLoad(); bindCards() }
+  IN_TOUR = view === "tour"; m.className = "v-" + view; if (view === "season") requestAnimationFrame(seasonInit); if (view === "coach") coachLoad(); if (view === "nutrition" && !CFG.nutSeen) setTimeout(nutTutorial, 350); bindCards() }
 function go(v) { view = v; render(); scrollTo(0, 0) }
 
 /* ===================== welcome / profile ===================== */
@@ -59,7 +59,7 @@ function todayHTML() { const T = curT(), Q = PH[T.p], pct = dayPct(T.p, T.w, T.d
    <div class="kick">Week ${Q.weeks[T.w].n} · Phase ${Q.n} · ${esc(Q.short)}</div><h1 class="${lab.length > 7 ? "long" : ""}">${esc(lab)}</h1>
    <div class="hsub">${dt ? (/^day/i.test(lab) ? DOW[dt.getDay()] + ", " : "") + nice(dt) : "This week · any day you choose"}${T.pre ? " · season hasn't started" : ""}</div>
    <div class="hgo">${btn}${skip ? "" : ring}</div></div></section><div class="body">`;
-  h += weekChips(T);
+  h += weekChips(T) + quickRow();
   if (skip) h += `<div class="note warn"><b>No workout here</b>${esc(skip)}</div>`;
   if (Q.callout && T.w === 0) h += `<div class="note"><b>Coach note</b>${esc(Q.callout)}</div>`;
   if (!skip && !done && !exc) h += `<button class="linkb" data-excuse>Can't lift today? Game, travel, sick or hurt →</button>`;
@@ -425,7 +425,7 @@ document.addEventListener("click", e => { const t = e.target.closest("button,[da
   if (D.equip) { const x = REWARDS.find(r => r.id === D.equip), slot = x.k === "frame" ? "frame" : x.k === "title" ? "title" : "badge"; CFG[slot] = CFG[slot] === x.id ? "" : x.id; saveNow(); render(); return }
   if ("cardhow" in D) { cardPreview(); return } if ("cardon" in D) { CFG.card = true; saveNow(); $$(".ov").forEach(o => closeOv(o)); render(); confetti(50); return } if ("cardoff" in D) { CFG.card = false; saveNow(); render(); return }
   if ("editions" in D) { editions(); return } if ("sharecard" in D) { shareImage("card", cardData()); return } if ("editprof" in D) { editProfile(); return }
-  if ("walksetup" in D) { walkSetup(); return } if ("levels" in D) { levelsSheet(); return } if ("gotoday" in D) { goToday(); return } if ("music" in D) { musicSheet(); return }
+  if ("walksetup" in D) { walkSetup(); return } if ("levels" in D) { levelsSheet(); return } if ("gotoday" in D) { goToday(); return } if ("totop" in D) { scrollTo({ top: 0, behavior: RM ? "auto" : "smooth" }); return } if ("nuthow" in D) { nutTutorial(); return } if ("music" in D) { musicSheet(); return }
   if (D.sfilt) { SFILT = D.sfilt; render(); seasonInit(); return } if (D.nmi) { NMI = +D.nmi; render(); return } if (D.tcard) { teamCard(D.tcard); return } if ("key" in D) { keySheet(); return }
   if (D.sw) { const k = D.sw; if (k === "snd") { CFG.snd = !(CFG.snd === true); if (CFG.snd) { ac(); sfx("pop") } } else if (k === "notif") { toggleNotif(); return } else if (k === "feed" || k === "boards") CFG.share[k] = !CFG.share[k]; else if (k === "mode") CFG.mode = CFG.mode === "list" ? "focus" : "list"; else CFG[k] = !CFG[k]; saveNow(); render(); return }
   if ("bwsave" in D) { const v = +$("[data-bwin]").value; if (v > 60 && v < 500) { CFG.bw.push({ d: ymd(new Date()), w: v }); saveNow(); toast("Weigh-in saved (coach only)"); render() } return }
