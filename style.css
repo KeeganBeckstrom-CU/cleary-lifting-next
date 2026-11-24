@@ -668,3 +668,5 @@ button.br{width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;g
 #totop{position:fixed;right:16px;bottom:calc(var(--nav) + 26px + env(safe-area-inset-bottom));z-index:39;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(9,17,38,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font:800 20px var(--hd);box-shadow:0 8px 20px rgba(0,0,0,.4);opacity:0;transform:translateY(10px) scale(.8);pointer-events:none;transition:.25s}
 #totop.on{opacity:1;transform:none;pointer-events:auto}
 #nav::before{box-sizing:border-box}
+.pace2{display:block;margin-top:5px;font:700 12px var(--bd);color:#E8EEF8;opacity:.85}
+.pcph{position:relative}.pcph img.pclogo{position:absolute;right:6px;bottom:6px;width:30%;height:auto;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,.6));z-index:2;border-radius:0}
