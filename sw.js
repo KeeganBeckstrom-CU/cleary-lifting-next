@@ -1,6 +1,6 @@
 /* CU Lifting service worker: works offline in the weight room + receives push notifications */
-const V = "cln-v19";
-const SHELL = ["./", "index.html", "style.css?v=19", "data.js?v=19", "core.js?v=19", "fx.js?v=19", "map.js?v=19", "coach.js?v=19", "art.js?v=19", "sched.js?v=19", "features.js?v=19", "app.js?v=19", "img/cu.png", "img/badge.png", "icons/icon-192.png", "manifest.webmanifest"];
+const V = "cln-v20";
+const SHELL = ["./", "index.html", "style.css?v=20", "data.js?v=20", "core.js?v=20", "fx.js?v=20", "map.js?v=20", "coach.js?v=20", "art.js?v=20", "sched.js?v=20", "features.js?v=20", "app.js?v=20", "img/cu.png", "img/badge.png", "icons/icon-192.png", "manifest.webmanifest"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())) });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== V).map(x => caches.delete(x)))).then(() => self.clients.claim())) });
 self.addEventListener("fetch", e => { const u = new URL(e.request.url); if (e.request.method !== "GET") return;

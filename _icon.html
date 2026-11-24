@@ -1,0 +1,9 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css?v=20"><style>html,body{margin:0;background:transparent}#c{width:1024px;height:1024px}
+.crt{font-family:"Barlow Condensed",Arial Narrow,sans-serif}</style></head><body><div id="c"></div>
+<script src="data.js"></script><script src="core.js"></script><script src="fx.js"></script><script src="map.js"></script><script src="art.js"></script>
+<script>
+function icon(scale,bg){const id="ic";const crest=crestSVG(0,0,52,id).replace(/<g class="crays">[\s\S]*?<\/g>/,"");
+ const back=bg?`<rect x="-60" y="-60" width="120" height="120" fill="url(#bgg)"/><g opacity="0">${Array.from({length:16},(_,i)=>`<path d="M0 0 L${(80*Math.cos(i*Math.PI/8-.08)).toFixed(1)} ${(80*Math.sin(i*Math.PI/8-.08)).toFixed(1)} L${(80*Math.cos(i*Math.PI/8+.08)).toFixed(1)} ${(80*Math.sin(i*Math.PI/8+.08)).toFixed(1)}Z" fill="#F3C34A" opacity=".18"/>`).join("")}</g>`:"";
+ document.getElementById("c").innerHTML=`<svg viewBox="-60 -60 120 120" width="1024" height="1024"><defs>${crestDefs(id)}<radialGradient id="bgg" cx="50%" cy="42%" r="70%"><stop offset="0" stop-color="#1D4A9A"/><stop offset=".6" stop-color="#002B5C"/><stop offset="1" stop-color="#03122E"/></radialGradient></defs>${back}<g transform="scale(${scale})">${crest}</g></svg>`;
+ document.querySelectorAll("#c *").forEach(e=>{e.style.animation="none"});document.querySelectorAll("#c .cshine,#c ellipse[opacity=".22"]").forEach(e=>e.remove());}
+</script></body></html>

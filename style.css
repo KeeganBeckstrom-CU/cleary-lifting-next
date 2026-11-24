@@ -643,3 +643,18 @@ button.br{width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;g
 .nlr input{height:30px!important;padding:2px!important;font-size:14px!important;border-radius:8px!important}
 .nlr{padding:3px 0}.ngoal{align-items:end}.ngoal label,.ngoal div{justify-content:flex-end}
 .un .opp,.tl-i .opp{display:grid;margin:0;color:#fff}
+/* v20 */
+.hme{display:flex;align-items:center;gap:6px;min-width:0}
+.hme b{font:800 16px var(--hd);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;padding:6px 10px;border-radius:999px;background:rgba(5,11,28,.55);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.hme b:empty{display:none}
+.hib{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:17px;line-height:1;color:#6FE3A5;background:rgba(5,11,28,.55);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:0;cursor:pointer}
+.hib .ico{width:18px;height:18px}
+.sfilt{position:static}.sfrow{position:sticky;top:8px;z-index:6}
+.gotoday{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav) + 26px + env(safe-area-inset-bottom));z-index:39;display:flex;align-items:center;gap:6px;padding:10px 16px;border-radius:999px;border:0;background:var(--gold);color:#1a1200;font:800 14px var(--hd);letter-spacing:1px;text-transform:uppercase;box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 18px rgba(243,195,74,.35);cursor:pointer}
+.gotoday .ico{width:16px;height:16px}
+.lvhow{margin:-4px 0 12px}
+.pace{display:block;position:relative;margin-top:7px;height:18px;border-radius:9px;background:rgba(255,255,255,.06);overflow:hidden}
+.pace i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 55%,transparent),color-mix(in srgb,var(--c) 25%,transparent));border-radius:9px}
+.pace em{position:relative;display:block;font:700 10.5px/18px var(--bd);font-style:normal;color:#E8EEF8;padding-left:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nav button span{white-space:nowrap}
+.tl-c span{text-transform:none!important}.hme b{max-width:140px;font-size:15px}

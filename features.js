@@ -31,7 +31,7 @@ function seasonHTML() { const T = findToday(), t = today0(), items = seasonItems
     <u style="left:${pos(t)}%"><span>Today</span></u></div>
    <div class="smon">${["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May"].map(m => `<span>${m}</span>`).join("")}</div>
    <div class="skey"><span><i class="k1"></i>Lifting phases</span><span><i class="k2"></i>Games</span><span><i class="k3"></i>Today</span></div></div>`;
-  h += `<div class="seg sfilt">${SFILTERS.map(([k, l]) => `<button class="${SFILT === k ? "on" : ""}" data-sfilt="${k}">${l}</button>`).join("")}</div>`;
+  h += `<div class="sfrow"><div class="seg sfilt">${SFILTERS.map(([k, l]) => `<button class="${SFILT === k ? "on" : ""}" data-sfilt="${k}">${l}</button>`).join("")}</div></div>`;
   /* timeline */
   const show = it => SFILT === "all" || (SFILT === "games" && (it.k === "game" || it.k === "trip" || it.tourney)) || (SFILT === "lift" && (it.k === "phase" || it.k === "week" || it.k === "break")) || (SFILT === "team" && (it.k === "event" || it.k === "milestone" || it.k === "break"));
   let mon = "", todayDone = false; h += `<div class="tl">`;
@@ -47,17 +47,28 @@ function seasonHTML() { const T = findToday(), t = today0(), items = seasonItems
     else if (it.k === "break") h += `<div class="tl-i brk ${past ? "past" : ""}">${dd}<div class="tl-c"><b>${esc(it.t)}</b><span>${nice(it.dt)} – ${nice(it.end)} · ${esc(it.s)}</span></div></div>`;
     else h += `<div class="tl-i ${it.k} ${it.big ? "big" : ""} ${past ? "past" : ""}">${dd}<i class="tl-ic">${it.k === "milestone" ? (it.tourney ? "🏆" : "★") : "◆"}</i><div class="tl-c"><b>${esc(it.t)}</b><span>${esc(it.s || "")}</span></div></div>` });
   if (!todayDone) h += `<div class="tl-today" id="tltoday"><span>Today</span></div>`;
-  return h + `</div><p class="fine">Games and team dates come from the Cleary Baseball 2026-27 calendar.</p></div>` }
-function seasonInit() { const e = $("#tltoday"); if (e) { const y = e.getBoundingClientRect().top + scrollY - 160; window.scrollTo({ top: Math.max(0, y), behavior: RM ? "auto" : "smooth" }) } }
+  return h + `</div><p class="fine">Games and team dates come from the Cleary Baseball 2026-27 calendar.</p></div><button class="gotoday" data-gotoday>${I.bolt}<span>Go to today</span></button>` }
+function seasonInit() { scrollTo(0, 0) }
+function goToday() { const e = $("#tltoday"); if (e) { const y = e.getBoundingClientRect().top + scrollY - 170; window.scrollTo({ top: Math.max(0, y), behavior: RM ? "auto" : "smooth" }) } }
 
 /* ---------- levels ladder ---------- */
 const TIERC = ["#9C6B3E", "#9DB0CC", "#F3C34A", "#5AD1E6", "#B48CFF", "#E8274F"];
 const HOWXP = [["Finish a workout", "+60"], ["Finish every workout in a week", "+120"], ["Each set you log", "+5"], ["Check off your warm-up", "+10"], ["Every day of your best streak", "+15"], ["Set a PR", "+30"], ["Watch a demo video", "+5"]];
+/* what a perfect season looks like, week by week: every workout, every set, every warm-up */
+function xpPlan() { return memo("xpplan", () => { let cum = 0, ses = 0; const out = [];
+  allWeeks().forEach(x => { const Q = PH[x.p]; let n = 0;
+    Q.days.forEach(D => { if (skipMsg(x.p, x.w, D.k)) return; n++; ses++; let sets = 0;
+      (Q.prog[D.k] || []).forEach(b => b.ex.forEach(e => { if (e.or) return; const W = Wk(e, x.w); if (W) sets += need(W) }));
+      cum += 60 + 15 + sets * 5 + ((Q.warm[D.k] || []).length ? 10 : 0) });
+    if (n) cum += 120; out.push({ p: x.p, w: x.w, n: x.n, mon: x.mon, cum, ses }) });
+  return out }) }
+function levelPace(need) { const P = xpPlan(), tot = P[P.length - 1]; if (!need) return null; const i = P.findIndex(q => q.cum >= need); if (i < 0) return { pct: 100, wk: tot, beyond: 1 };
+  return { pct: Math.max(1, Math.round((i + 1) / P.length * 100)), wk: P[i] } }
 function levelsSheet() { const x = xpInfo();
   sheet("Levels", `<div class="lvtop"><div class="lvbadge" style="--c:${TIERC[x.li]}">${x.li + 1}</div><div><small>You're a</small><b>${esc(x.name)}</b><span>${fmt(x.xp)} XP${x.next ? " · " + fmt(x.next - x.xp) + " to " + esc(x.nextName) : " · top level"}</span></div></div>
-   <div class="ladder">${LEVELS.slice().reverse().map(([n, need], ri) => { const i = LEVELS.length - 1 - ri, got = x.xp >= need, cur = i === x.li, nx = LEVELS[i + 1];
+   <p class="fine lvhow">The bars show how much of the season it takes to reach each level if you finish <b>every</b> workout, set and warm-up. PRs, demo videos and long streaks get you there faster.</p><div class="ladder">${LEVELS.slice().reverse().map(([n, need], ri) => { const i = LEVELS.length - 1 - ri, got = x.xp >= need, cur = i === x.li, nx = LEVELS[i + 1];
      const pct = cur && nx ? Math.round((x.xp - need) / (nx[1] - need) * 100) : got ? 100 : 0;
-     return `<div class="rung ${got ? "got" : ""} ${cur ? "cur" : ""}" style="--c:${TIERC[i]}"><div class="rb">${got ? "★" : i + 1}</div><div class="rt"><b>${esc(n)}</b><small>${need ? fmt(need) + " XP" : "Start here"}${cur ? " · you are here" : ""}</small>${cur && nx ? `<div class="xpbar"><i style="width:${pct}%"></i></div>` : ""}</div>${got && !cur ? `<em>✓</em>` : ""}</div>` }).join("")}</div>
+     return `<div class="rung ${got ? "got" : ""} ${cur ? "cur" : ""}" style="--c:${TIERC[i]}"><div class="rb">${got ? "★" : i + 1}</div><div class="rt"><b>${esc(n)}</b><small>${need ? fmt(need) + " XP" : "Start here"}${cur ? " · you are here" : ""}</small>${(() => { const L = levelPace(need); return L ? `<span class="pace"><i style="width:${L.pct}%"></i><em>${L.beyond ? "Needs the whole season plus PRs" : `${L.pct}% of the season · Week ${L.wk.n} (${nice(L.wk.mon)}) · ${L.wk.ses} workouts`}</em></span>` : "" })()}${cur && nx ? `<div class="xpbar"><i style="width:${pct}%"></i></div>` : ""}</div>${got && !cur ? `<em>✓</em>` : ""}</div>` }).join("")}</div>
    <h4 class="kg">How to earn XP</h4><div class="howxp">${HOWXP.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join("")}</div>
    <p class="fine">Showing up is worth the most. Finishing workouts beats lifting heavy.</p>`, "tall") }
 
@@ -123,3 +134,6 @@ function nutInput(t) { const D = t.dataset; const M = NMON[NMI]; const r = nrec(
   const c = ncal(d), a = $("#nc" + D.nd); if (a) a.textContent = c ? fmt(c) : ""; const b = $("#ncalt"); if (b && +D.nd === new Date().getDate()) b.textContent = fmt(c);
   $$(`[data-nd="${D.nd}"][data-nf="${D.nf}"]`).forEach(x => { if (x !== t) x.value = t.value });
   const ns = $(".nsum"); if (ns) { const tmp = document.createElement("div"); tmp.innerHTML = nsumHTML(M, r); ns.querySelector(".nstat").replaceWith(tmp.querySelector(".nstat")); ns.querySelector(".nsh small").textContent = tmp.querySelector(".nsh small").textContent; const lb = ns.querySelector(".ngoal div b"); if (lb) lb.textContent = tmp.querySelector(".ngoal div b").textContent } }
+/* levels scaled to the real season: a player who finishes everything reaches Cougar Legend near the end, not by November */
+(function () { const P = xpPlan(), tot = P[P.length - 1].cum, at = [0, .05, .15, .33, .55, .8];
+  at.forEach((f, i) => { LEVELS[i][1] = Math.round(tot * f / 100) * 100 }); MEMO = {} })();

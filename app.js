@@ -21,7 +21,7 @@ function render() { MEMO = {}; const m = $("#main"); if (!CFG.me && !isCoach()) 
   if (view === "gym") view = "today"; if (!CFG.me && ["today", "trophies"].includes(view)) view = "coach";
   if (pv && view === "coach") view = "today";
   const tabs = isCoach() && !pv ? [["coach", "Coach", I.clip]].concat(CFG.me ? [["today", "Today", I.bolt]] : [], [["season", "Season", I.map], ["team", "Team", I.team], ["me", "Me", I.me]])
-    : [["today", "Today", I.bolt], ["season", "Season", I.map], ["team", "Team", I.team], ["trophies", "Trophies", I.cup], ["me", "Me", I.me]];
+    : [["today", "Today", I.bolt], ["season", "Season", I.map], ["team", "Team", I.team], ["trophies", "Hall of Fame", I.cup], ["me", "Me", I.me]];
   $("#nav").hidden = false; $("#nav").innerHTML = tabs.map(([k, l, ic]) =>
     `<button class="${view === k ? "on" : ""}" data-nav="${k}">${ic}<span>${l}</span>${k === "trophies" && unopened().length ? `<i class="dot">${unopened().length}</i>` : ""}</button>`).join("");
   $("#nav").style.setProperty("--n", tabs.length); $("#nav").style.setProperty("--i", Math.max(0, tabs.findIndex(t => t[0] === view)));
@@ -55,7 +55,7 @@ function todayHTML() { const T = curT(), Q = PH[T.p], pct = dayPct(T.p, T.w, T.d
   const btn = skip ? "" : done ? `<button class="skew white" data-start>✓ Done · view</button>` : exc ? `<button class="skew ghostb" data-unexc>Excused · ${esc(exc.why)} · undo</button>` : `<button class="skew white" data-start>${started ? "Keep going" : "Start workout"}</button>`;
   const ring = `<div class="ring" style="--p:${Math.round((pct || 0) * 100)}"><b>${Math.round((pct || 0) * 100)}%</b><small>done</small></div>`;
   let h = `<section class="hero"><div class="hscene">${heroSVG(zoneOf(T.p).kind)}</div><div class="hshade"></div><div class="hin">
-   <div class="trow"><span></span><div class="hchips"><span class="chip fl" title="Lift-day streak">${I.flame}<b>${st.cur}</b></span><button class="chip lv" data-levels>${esc(xp.name)} ›</button></div></div>
+   <div class="trow"><div class="hme"><b>${CFG.me ? esc(CFG.me.fn) : ""}</b><button class="hib" data-nav="nutrition" aria-label="Nutrition">🍽️</button><button class="hib" data-music aria-label="Music">${I.music}</button></div><div class="hchips"><span class="chip fl" title="Lift-day streak">${I.flame}<b>${st.cur}</b></span><button class="chip lv" data-levels>${esc(xp.name)} ›</button></div></div>
    <div class="kick">Week ${Q.weeks[T.w].n} · Phase ${Q.n} · ${esc(Q.short)}</div><h1 class="${lab.length > 7 ? "long" : ""}">${esc(lab)}</h1>
    <div class="hsub">${dt ? (/^day/i.test(lab) ? DOW[dt.getDay()] + ", " : "") + nice(dt) : "This week · any day you choose"}${T.pre ? " · season hasn't started" : ""}</div>
    <div class="hgo">${btn}${skip ? "" : ring}</div></div></section><div class="body">`;
@@ -66,7 +66,6 @@ function todayHTML() { const T = curT(), Q = PH[T.p], pct = dayPct(T.p, T.w, T.d
   const xpPct = xp.next ? (xp.xp - xp.base) / (xp.next - xp.base) : 1;
   h += `<div class="tiles"><div class="tile flame"><span>${I.flame}</span><b>${st.cur}</b><small>lift-day streak · best ${st.best}</small></div>
     <button class="tile lvt" data-levels><b class="sm">${esc(xp.name)} <i class="tap">›</i></b><div class="xpbar"><i style="width:${Math.round(xpPct * 100)}%"></i></div><small>${fmt(xp.xp)} XP${xp.next ? " · " + fmt(xp.next - xp.xp) + " to " + esc(xp.nextName) : ""}</small></button></div>`;
-  h += quickRow();
   if (caps.length) h += `<button class="capcall" data-opencap="${caps[0]}"><div class="mcap"></div><div><b>${caps.length} capsule${caps.length > 1 ? "s" : ""} ready</b><small>You finished a full week. Tap to open.</small></div>${I.fwd}</button>`;
   h += pulseCard(true);
   h += `<div class="card why"><b>Phase ${Q.n} · ${esc(Q.name)}</b><p>${esc(Q.purpose)}</p></div>`;
@@ -237,11 +236,11 @@ function hofRecords() { const out = {}; const prs = prEvents(); MAIN.forEach(k =
   out[k] = { name: EXIDX[k][0].e.name, best } }); return out }
 function trophiesHTML() { const caps = unopened(), prs = prEvents(), H = hofRecords(), st = streakInfo(), xp = xpInfo(), owned = REWARDS.filter(x => CFG.inv.includes(x.id));
   const mil = [["First workout", SESS.some(S => isDone(S.p, S.w, S.d))], ["First PR", prs.length > 0], ["5-day streak", st.best >= 5], ["15-day streak", st.best >= 15], ["30-day streak", st.best >= 30], ["Perfect week", earnedCapsules().length > 0], ["10 PRs", prs.length >= 10], ["Starter", xp.li >= 2], ["All-Conference", xp.li >= 3], ["Phase trophy", PH.some((_, p) => phaseWon(p))]];
-  return topbar("Trophy room", "Hall of Fame, capsules, collection") + `<div class="body">
+  return topbar("Hall of Fame", "Records, capsules, trophies, collection") + `<div class="body">
    <div class="card vault"><div class="shelf">${caps.length ? caps.slice(0, 5).map((k, i) => `<button class="minicap" style="--i:${i}" data-opencap="${k}" aria-label="Open capsule"></button>`).join("") : `<div class="vempty">No capsules waiting</div>`}</div>
     <b>${caps.length} capsule${caps.length === 1 ? "" : "s"} ready</b><small>Finish every workout in a week to earn one. Rewards are cosmetic: frames, titles, badges.</small></div>
    ${owned.length ? `<div class="sec-h"><h2>Collection</h2><small>${owned.length}/${REWARDS.length}</small></div><div class="coll">${owned.map(x => `<button class="cl r-${x.r} ${CFG.frame === x.id || CFG.title === x.id || CFG.badge === x.id ? "eq" : ""}" data-equip="${x.id}"><i>${x.k === "frame" ? "▣" : x.k === "title" ? "❝" : "✦"}</i><b>${esc(x.n)}</b><small>${CFG.frame === x.id || CFG.title === x.id || CFG.badge === x.id ? "Equipped" : "Tap to equip"}</small></button>`).join("")}</div>` : ""}
-   <div class="hof"><div class="dome"><div class="hcrest">${miniCrest(110)}</div><div class="hban"><img src="img/cu.png" alt=""><h2>Hall of Fame</h2><img src="img/cu.png" alt=""></div><p>Cleary Cougars weight room records · they carry over year to year</p></div>
+   <div class="hof"><div class="dome"><div class="hcrest">${miniCrest(110)}</div><div class="hban"><img src="img/cu.png" alt=""><h2>Record Wall</h2><img src="img/cu.png" alt=""></div><p>Cleary Cougars weight room records · they carry over year to year</p></div>
     <div class="plaques">${Object.values(H).map(x => `<div class="plq ${x.best ? "" : "empty"}"><img class="plg" src="img/badge.png" alt=""><small>${esc(x.name)}</small>${x.best ? `<b>${x.best.w} <i>lb</i></b><span>${esc(myName())} · ${nice(x.best.dt)}</span>${x.best.check ? `<em>Pending coach check</em>` : ""}` : `<b class="q">—</b><span>Unclaimed · be the first</span>`}</div>`).join("")}</div>
     <p class="fine">Big jumps (20%+ over a previous best) show as "pending coach check" before they go on the wall.</p></div>
    <div class="sec-h"><h2>Phase trophies</h2><small>${PH.filter((_, p) => phaseWon(p)).length} of ${PH.length}</small></div><div class="shelf2">${PH.map((Q, p) => { const s = phaseSessions(p), won = phaseWon(p); return `<button class="tro ${won ? "won" : ""}" data-mph="${p}">${I.cup}<b>${Q.n}</b><i style="height:${s.tot ? s.done / s.tot * 100 : 0}%"></i></button>` }).join("")}</div>
@@ -275,7 +274,6 @@ function meHTML() { if (!CFG.me) return topbar("Me", "Coach account") + `<div cl
     <small>${xp.next ? fmt(xp.next - xp.xp) + " XP to " + esc(xp.nextName) : "Max level"} · streak ${st.cur} (best ${st.best})</small><details><summary>Where your XP comes from</summary>${xp.parts.map(([a, b]) => `<div class="xr"><span>${a}</span><b>${fmt(b)}</b></div>`).join("")}<p class="fine">Showing up is worth the most. Finishing workouts beats lifting heavy.</p></details></div>`;
   h += tourCard();
   { const d = cardData(); h += `<div class="sec-h"><h2>Effort card</h2><small>Effort + improvement</small></div><div class="mycard">${cardHTML(d)}</div><div class="effnote">${I.flame}<span>Your card grows from <b>showing up and beating your own numbers</b> — never from total weight lifted.</span></div><div class="btn3"><button class="pill gold sm" data-sharecard>Share to story</button><button class="pill sm" data-editions>Editions</button><label class="pill sm">Photo<input type="file" accept="image/*" data-photo hidden></label></div><div class="cardlinks"><button class="linkb sm" data-cardhow>How every rating works →</button></div>` }
-  h += `<div class="sec-h"><h2>Fuel &amp; music</h2></div><div class="qrow">${quickBtns()}</div>`;
   h += `<div class="sec-h"><h2>My lifts</h2></div><div class="lifts">${MAIN.slice(0, 40).map(k => { const tops = []; EXIDX[k].forEach(x => PH[x.p].weeks.forEach((_, w) => { const t = topSet(x.p, w, x.d, x.bi, x.ei); if (t) tops.push({ o: ord(x.p, w, x.di), t }) })); if (!tops.length) return "";
     tops.sort((a, b) => a.o - b.o); const mx = Math.max(...tops.map(q => q.t)), mn = Math.min(...tops.map(q => q.t)); const pts = tops.map((q, i) => `${(i / (Math.max(1, tops.length - 1)) * 100).toFixed(1)},${(26 - (q.t - mn) / Math.max(1, mx - mn) * 22).toFixed(1)}`).join(" ");
     return `<div class="lift"><b>${esc(EXIDX[k][0].e.name)}</b><svg viewBox="0 0 100 30" preserveAspectRatio="none" fill="none"><polyline points="${pts}"/></svg><em>${mx}<i>lb</i></em></div>` }).join("") || `<p class="fine">Log a weight on any main lift and it shows up here with a trend line.</p>`}</div>`;
@@ -427,7 +425,7 @@ document.addEventListener("click", e => { const t = e.target.closest("button,[da
   if (D.equip) { const x = REWARDS.find(r => r.id === D.equip), slot = x.k === "frame" ? "frame" : x.k === "title" ? "title" : "badge"; CFG[slot] = CFG[slot] === x.id ? "" : x.id; saveNow(); render(); return }
   if ("cardhow" in D) { cardPreview(); return } if ("cardon" in D) { CFG.card = true; saveNow(); $$(".ov").forEach(o => closeOv(o)); render(); confetti(50); return } if ("cardoff" in D) { CFG.card = false; saveNow(); render(); return }
   if ("editions" in D) { editions(); return } if ("sharecard" in D) { shareImage("card", cardData()); return } if ("editprof" in D) { editProfile(); return }
-  if ("walksetup" in D) { walkSetup(); return } if ("levels" in D) { levelsSheet(); return } if ("music" in D) { musicSheet(); return }
+  if ("walksetup" in D) { walkSetup(); return } if ("levels" in D) { levelsSheet(); return } if ("gotoday" in D) { goToday(); return } if ("music" in D) { musicSheet(); return }
   if (D.sfilt) { SFILT = D.sfilt; render(); seasonInit(); return } if (D.nmi) { NMI = +D.nmi; render(); return } if (D.tcard) { teamCard(D.tcard); return } if ("key" in D) { keySheet(); return }
   if (D.sw) { const k = D.sw; if (k === "snd") { CFG.snd = !(CFG.snd === true); if (CFG.snd) { ac(); sfx("pop") } } else if (k === "notif") { toggleNotif(); return } else if (k === "feed" || k === "boards") CFG.share[k] = !CFG.share[k]; else if (k === "mode") CFG.mode = CFG.mode === "list" ? "focus" : "list"; else CFG[k] = !CFG[k]; saveNow(); render(); return }
   if ("bwsave" in D) { const v = +$("[data-bwin]").value; if (v > 60 && v < 500) { CFG.bw.push({ d: ymd(new Date()), w: v }); saveNow(); toast("Weigh-in saved (coach only)"); render() } return }

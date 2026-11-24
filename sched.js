@@ -23,7 +23,6 @@ window.SCHED = [
   { d: "2026-12-11", k: "milestone", t: "Last fall lift", s: "Lifting groups wrap up" },
   { d: "2026-12-12", end: "2027-01-03", k: "break", t: "Winter break", s: "Keep your program going — it's on your phone" },
   { d: "2027-01-04", k: "milestone", t: "Practices start again", s: "Legacy · practice 12–2 · hitting groups & lifts 3–5", big: 1 },
-  { d: "2027-01-08", k: "event", t: "ABCA Convention", s: "Coaches away" },
   { d: "2027-02-05", k: "trip", opp: "Pikeville", ha: "away", s: "Season opener trip" },
   { d: "2027-02-12", k: "event", t: "First Pitch Banquet", s: "" },
   { d: "2027-02-20", k: "trip", opp: "Midway", ha: "away" },
